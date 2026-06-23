@@ -33,6 +33,7 @@ import { getDatabase, ref, onValue, set, update, remove } from "https://www.gsta
 const firebaseConfig = {
   apiKey: "AIzaSyB5t3o8EpbEnD5mmjRvCOldeThIwFFkd8U",
   authDomain: "lucete-attendance.firebaseapp.com",
+  databaseURL: "https://lucete-attendance-default-rtdb.firebaseio.com",
   projectId: "lucete-attendance",
   storageBucket: "lucete-attendance.firebasestorage.app",
   messagingSenderId: "471960193426",
@@ -43,396 +44,583 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 // ---------- 데이터 ----------
-var RAW_CLASSES = [{"className": "Seed 2-5A 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "강소원", "school": "약수", "grade": 1, "note": ""}, {"name": "김연우", "school": "동대", "grade": 1, "note": ""}, {"name": "김윤호", "school": "은월", "grade": 2, "note": ""}, {"name": "오이준", "school": "은월", "grade": 2, "note": ""}, {"name": "김서연", "school": "은월", "grade": 2, "note": ""}, {"name": "이예준", "school": "매산", "grade": 2, "note": ""}, {"name": "김건우A", "school": "농소", "grade": 2, "note": ""}]}, {"className": "Seed 2-5B 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "강리예", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "박서준", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "유슬하", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "김예린", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "정연재", "school": "매산", "grade": 3, "note": "목 늦"}, {"name": "서정연", "school": "매산", "grade": 3, "note": "화 원어민참여\n목 늦\n금 늦 4:40 등원"}, {"name": "김정윤", "school": "은월", "grade": 3, "note": "목 3:25등원"}, {"name": "김나연b", "school": "은월", "grade": 3, "note": "목 3:25등원"}]}, {"className": "Seed 2-5C 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "윤석민", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "박시현b", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "김준우", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "윤다현", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "이연서", "school": "신천", "grade": 3, "note": "화 3:25등원"}, {"name": "김나경B", "school": "매곡", "grade": 3, "note": "화 3:25등원"}, {"name": "이시형", "school": "매산", "grade": 4, "note": "목 늦"}, {"name": "백지유", "school": "은월", "grade": 4, "note": "목 3:25등원"}]}, {"className": "Sp AA 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "최현규", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "최수영", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "최규현", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "송수하", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "윤지후", "school": "매곡", "grade": 4, "note": "화 3:25등원"}, {"name": "이지효", "school": "매산", "grade": 3, "note": "목 늦\n금 2:55 원어민참여"}, {"name": "김라희", "school": "매산", "grade": 4, "note": "수목 늦\n금 2:55 원어민참여\n목 4:20 랩 등원"}, {"name": "전시안", "school": "은월", "grade": 4, "note": "목 3:25등원\n금 2:55 원어민참여"}, {"name": "임예준", "school": "중산", "grade": 4, "note": "목 3:25등원\n금 2:55 원어민참여"}]}, {"className": "Sp BA 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "이수빈", "school": "매산", "grade": 2, "note": ""}, {"name": "정소민", "school": "매산", "grade": 3, "note": ""}, {"name": "최아윤", "school": "농소", "grade": 3, "note": ""}, {"name": "김민채", "school": "농소", "grade": 3, "note": ""}, {"name": "황수민", "school": "매산", "grade": 4, "note": ""}, {"name": "김솔", "school": "매산", "grade": 4, "note": ""}, {"name": "장이안", "school": "매산", "grade": 4, "note": ""}, {"name": "박윤호", "school": "매산", "grade": 4, "note": ""}]}, {"className": "Bud AA 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "오주한", "school": "매산", "grade": 2, "note": ""}, {"name": "오유나", "school": "매산", "grade": 2, "note": ""}, {"name": "이민섭", "school": "매산", "grade": 3, "note": ""}, {"name": "이진율", "school": "은월", "grade": 3, "note": ""}, {"name": "윤종욱", "school": "은월", "grade": 3, "note": ""}, {"name": "강승우", "school": "은월", "grade": 4, "note": ""}, {"name": "정세인", "school": "농소", "grade": 3, "note": ""}, {"name": "이윤서", "school": "중산", "grade": 4, "note": ""}, {"name": "이예진", "school": "매산", "grade": 4, "note": ""}, {"name": "이예빈", "school": "매산", "grade": 4, "note": ""}, {"name": "이서진", "school": "매산", "grade": 4, "note": "매일4:25하원\n목 3:00 등원"}]}, {"className": "Bud AB 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "진하현", "school": "신천", "grade": 4, "note": ""}, {"name": "김한율", "school": "은월", "grade": 4, "note": ""}, {"name": "남서연", "school": "중산", "grade": 4, "note": ""}, {"name": "김현서", "school": "중산", "grade": 4, "note": ""}, {"name": "강태훈", "school": "매곡", "grade": 4, "note": ""}, {"name": "김종윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "김민준B", "school": "매산", "grade": 5, "note": ""}, {"name": "강민호", "school": "매산", "grade": 5, "note": ""}, {"name": "박민준", "school": "매산", "grade": 5, "note": ""}, {"name": "정은수", "school": "은월", "grade": 5, "note": "수4:50등원"}]}, {"className": "E3A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "김윤설", "school": "매산", "grade": 4, "note": ""}, {"name": "오연서", "school": "매산", "grade": 4, "note": "목금 10분 늦"}, {"name": "노지현", "school": "농소", "grade": 4, "note": ""}, {"name": "김서우", "school": "농소", "grade": 4, "note": ""}, {"name": "서주은", "school": "중산", "grade": 4, "note": ""}, {"name": "최아인", "school": "중산", "grade": 4, "note": ""}, {"name": "최서인", "school": "중산", "grade": 4, "note": "월수목만 등원\n월수목 남아서 숙제 후 주테응시"}, {"name": "양인서", "school": "은월", "grade": 5, "note": "목4:50 등원"}, {"name": "안윤서", "school": "매곡", "grade": 5, "note": ""}, {"name": "김채아", "school": "매곡", "grade": 6, "note": ""}]}, {"className": "E4A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "남예린", "school": "동대", "grade": 3, "note": ""}, {"name": "진소윤", "school": "동대", "grade": 4, "note": ""}, {"name": "하도담", "school": "중산", "grade": 4, "note": ""}, {"name": "이승윤", "school": "매산", "grade": 4, "note": ""}, {"name": "신준영", "school": "매산", "grade": 5, "note": ""}, {"name": "홍효주", "school": "매산", "grade": 5, "note": ""}, {"name": "임태준", "school": "매산", "grade": 5, "note": "화목 4:50등원\n원어민 목E3B참여"}, {"name": "손준원", "school": "매곡", "grade": 6, "note": ""}, {"name": "서지니", "school": "은월", "grade": 6, "note": ""}]}, {"className": "E5A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "박나연", "school": "매곡", "grade": 4, "note": ""}, {"name": "김지환a", "school": "매산", "grade": 4, "note": ""}, {"name": "이재인", "school": "동대", "grade": 4, "note": ""}, {"name": "허재원", "school": "은월", "grade": 4, "note": ""}, {"name": "이윤교", "school": "은월", "grade": 4, "note": ""}, {"name": "김도예", "school": "은월", "grade": 5, "note": ""}, {"name": "신은세", "school": "매곡", "grade": 5, "note": ""}, {"name": "정시우", "school": "약수", "grade": 5, "note": "화목 컴퓨터 5분 늦"}]}, {"className": "E3B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "최희유", "school": "은월", "grade": 5, "note": ""}, {"name": "안예나", "school": "은월", "grade": 5, "note": ""}, {"name": "안예서", "school": "은월", "grade": 5, "note": ""}, {"name": "윤주원", "school": "매산", "grade": 5, "note": ""}, {"name": "황가은", "school": "매산", "grade": 5, "note": ""}, {"name": "권도진", "school": "매산", "grade": 5, "note": "월수 수학 5:00"}, {"name": "유수현", "school": "신천", "grade": 5, "note": "월수금 수학 늦"}, {"name": "이채원", "school": "중산", "grade": 5, "note": ""}, {"name": "허지윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "정하율", "school": "동대", "grade": 5, "note": ""}]}, {"className": "E3C 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "신은서", "school": "매산", "grade": 5, "note": "늦"}, {"name": "김도한", "school": "매산", "grade": 5, "note": ""}, {"name": "박세은", "school": "농소", "grade": 5, "note": ""}, {"name": "황예림", "school": "농소", "grade": 5, "note": ""}, {"name": "김하연", "school": "은월", "grade": 5, "note": ""}, {"name": "권나윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "김보미", "school": "약수", "grade": 6, "note": ""}, {"name": "예우주", "school": "약수", "grade": 6, "note": ""}, {"name": "임예지", "school": "중산", "grade": 6, "note": ""}]}, {"className": "E4B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "백종현", "school": "매산", "grade": 5, "note": ""}, {"name": "김준영", "school": "농소", "grade": 5, "note": "월수금 수학 늦"}, {"name": "박서우", "school": "농소", "grade": 5, "note": "월수금 수학 늦"}, {"name": "김예준", "school": "농소", "grade": 5, "note": ""}, {"name": "장유영", "school": "농소", "grade": 5, "note": ""}, {"name": "박성빈", "school": "농소", "grade": 5, "note": ""}, {"name": "박진서", "school": "은월", "grade": 5, "note": ""}, {"name": "김민준A", "school": "은월", "grade": 5, "note": ""}, {"name": "윤서연", "school": "매곡", "grade": 5, "note": ""}, {"name": "김민재", "school": "매곡", "grade": 5, "note": ""}]}, {"className": "E5B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "한서음", "school": "농소", "grade": 5, "note": ""}, {"name": "남일우", "school": "매곡", "grade": 5, "note": ""}, {"name": "이봄", "school": "중산", "grade": 5, "note": ""}, {"name": "허도현", "school": "중산", "grade": 5, "note": ""}, {"name": "김윤아", "school": "은월", "grade": 5, "note": ""}, {"name": "천서훈", "school": "은월", "grade": 5, "note": ""}, {"name": "안예준", "school": "은월", "grade": 5, "note": ""}, {"name": "황다연", "school": "은월", "grade": 5, "note": ""}]}, {"className": "E5C 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "김나혜", "school": "매산", "grade": 5, "note": ""}, {"name": "박가람", "school": "은월", "grade": 5, "note": ""}, {"name": "전아린", "school": "은월", "grade": 6, "note": ""}, {"name": "임세아", "school": "은월", "grade": 6, "note": ""}, {"name": "구도아", "school": "은월", "grade": 6, "note": ""}, {"name": "설민석", "school": "은월", "grade": 6, "note": ""}, {"name": "최준성", "school": "은월", "grade": 6, "note": ""}, {"name": "김범", "school": "매산", "grade": 6, "note": ""}, {"name": "변지후", "school": "매산", "grade": 6, "note": ""}]}, {"className": "E6A 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "박송희", "school": "매산", "grade": 5, "note": ""}, {"name": "이지원", "school": "매산", "grade": 5, "note": ""}, {"name": "변지민", "school": "신천", "grade": 5, "note": ""}, {"name": "서예원", "school": "신천", "grade": 5, "note": ""}, {"name": "김세윤", "school": "은월", "grade": 5, "note": ""}, {"name": "허지원", "school": "은월", "grade": 6, "note": ""}, {"name": "김은수", "school": "매산", "grade": 6, "note": ""}, {"name": "장하준", "school": "매산", "grade": 6, "note": ""}, {"name": "김지환B", "school": "중산", "grade": 6, "note": ""}]}, {"className": "E7A 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "차은서", "school": "중산", "grade": 5, "note": ""}, {"name": "한예주", "school": "은월", "grade": 5, "note": ""}, {"name": "김주하", "school": "은월", "grade": 6, "note": ""}, {"name": "송주하", "school": "농소", "grade": 6, "note": ""}, {"name": "김태은", "school": "농소", "grade": 6, "note": ""}, {"name": "송지율", "school": "농소", "grade": 6, "note": ""}, {"name": "조가연", "school": "매산", "grade": 6, "note": ""}, {"name": "강나희", "school": "매곡", "grade": 6, "note": ""}]}, {"className": "E7B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "윤세영", "school": "은월", "grade": 6, "note": ""}, {"name": "안예온", "school": "은월", "grade": 6, "note": ""}, {"name": "하리안", "school": "매곡", "grade": 6, "note": ""}, {"name": "임서윤", "school": "매산", "grade": 6, "note": ""}, {"name": "김지운B", "school": "매산", "grade": 6, "note": ""}, {"name": "서정민", "school": "매산", "grade": 6, "note": ""}]}, {"className": "M11E 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "이안나", "school": "고헌", "grade": 6, "note": "월화목 6:20등원"}, {"name": "임지윤", "school": "매산", "grade": 6, "note": ""}, {"name": "황수현", "school": "호계", "grade": 7, "note": ""}, {"name": "이서현", "school": "호계", "grade": 7, "note": ""}, {"name": "이시은B", "school": "호계", "grade": 7, "note": ""}, {"name": "김서은", "school": "호계", "grade": 7, "note": ""}, {"name": "곽은호", "school": "호계", "grade": 7, "note": ""}, {"name": "김나경", "school": "호계", "grade": 7, "note": ""}, {"name": "이동건", "school": "호계", "grade": 7, "note": "화목 늦"}, {"name": "김가영", "school": "매곡", "grade": 7, "note": "화목 늦"}, {"name": "서채은", "school": "농소", "grade": 7, "note": ""}]}, {"className": "M11A 월 수 금", "time": "", "days": "월수금", "students": [{"name": "허예은", "school": "호계", "grade": 7, "note": "목 7:30 주테"}, {"name": "최서영", "school": "호계", "grade": 7, "note": ""}, {"name": "이가비", "school": "호계", "grade": 7, "note": ""}, {"name": "김세아", "school": "호계", "grade": 7, "note": ""}, {"name": "노해윤", "school": "농소", "grade": 7, "note": ""}, {"name": "김민서C", "school": "농소", "grade": 7, "note": ""}, {"name": "장유승", "school": "농소", "grade": 7, "note": ""}, {"name": "김민지A", "school": "농소", "grade": 7, "note": ""}, {"name": "김근우", "school": "농소", "grade": 7, "note": ""}, {"name": "윤채영", "school": "매곡", "grade": 7, "note": ""}]}, {"className": "M12C 월 수 금", "time": "", "days": "월수금", "students": [{"name": "임재윤", "school": "은월", "grade": 6, "note": ""}, {"name": "정영훈", "school": "매곡", "grade": 6, "note": ""}, {"name": "황지운", "school": "농소", "grade": 7, "note": ""}, {"name": "박지유", "school": "호계", "grade": 7, "note": ""}, {"name": "박준민B", "school": "호계", "grade": 7, "note": ""}, {"name": "서정혁", "school": "호계", "grade": 8, "note": ""}, {"name": "김하임", "school": "호계", "grade": 8, "note": ""}, {"name": "강연재", "school": "농소", "grade": 8, "note": ""}, {"name": "강재원", "school": "농소", "grade": 8, "note": ""}, {"name": "강나운", "school": "매곡", "grade": 8, "note": ""}]}, {"className": "M14A 월 수 금", "time": "", "days": "월수금", "students": [{"name": "정예원", "school": "매곡", "grade": 8, "note": ""}, {"name": "임동원", "school": "호계", "grade": 8, "note": ""}, {"name": "장하윤", "school": "호계", "grade": 8, "note": ""}, {"name": "김채환", "school": "호계", "grade": 8, "note": "늦"}, {"name": "이준상", "school": "호계", "grade": 8, "note": "늦 6:40~"}, {"name": "김민서", "school": "농소", "grade": 8, "note": ""}, {"name": "김동우", "school": "매곡", "grade": 9, "note": ""}, {"name": "김민건", "school": "이화", "grade": 9, "note": ""}]}, {"className": "M15B 월 수 금", "time": "", "days": "월수금", "students": [{"name": "이우재", "school": "농소", "grade": 8, "note": ""}, {"name": "김민아", "school": "호계", "grade": 8, "note": ""}, {"name": "홍지영", "school": "호계", "grade": 9, "note": ""}, {"name": "박준우", "school": "매곡", "grade": 9, "note": ""}]}, {"className": "M12B 화 목 금", "time": "", "days": "화목금", "students": [{"name": "이현욱", "school": "매산", "grade": 6, "note": ""}, {"name": "김민기B", "school": "매산", "grade": 6, "note": ""}, {"name": "김규은", "school": "호계", "grade": 7, "note": ""}, {"name": "허은서", "school": "호계", "grade": 7, "note": ""}, {"name": "박재은", "school": "호계", "grade": 7, "note": ""}, {"name": "옥승민", "school": "호계", "grade": 7, "note": ""}, {"name": "백서윤", "school": "호계", "grade": 7, "note": ""}, {"name": "백재이", "school": "호계", "grade": 7, "note": ""}, {"name": "이시은C", "school": "매곡", "grade": 7, "note": ""}, {"name": "이재희", "school": "매곡", "grade": 7, "note": ""}, {"name": "정인완", "school": "농소", "grade": 7, "note": "금4:50 주테응시"}]}, {"className": "M12D 화 목 금", "time": "", "days": "화목금", "students": [{"name": "김서유", "school": "중산", "grade": 6, "note": ""}, {"name": "신민정", "school": "매곡", "grade": 7, "note": ""}, {"name": "김나연", "school": "호계", "grade": 7, "note": ""}, {"name": "이소윤", "school": "호계", "grade": 7, "note": ""}, {"name": "윤시현", "school": "호계", "grade": 7, "note": ""}, {"name": "박소윤", "school": "호계", "grade": 7, "note": ""}, {"name": "전시윤", "school": "호계", "grade": 8, "note": ""}, {"name": "이서준", "school": "호계", "grade": 8, "note": ""}, {"name": "김세언", "school": "호계", "grade": 8, "note": ""}, {"name": "이가연", "school": "호계", "grade": 8, "note": "금 4:50 주테"}, {"name": "서우솔", "school": "호계", "grade": 8, "note": "금-결석\n주테월8:00"}, {"name": "구도훈", "school": "호계", "grade": 9, "note": ""}]}, {"className": "M13C 화 목 금", "time": "", "days": "화목금", "students": [{"name": "최준상", "school": "농소", "grade": 7, "note": ""}, {"name": "김민기A", "school": "호계", "grade": 7, "note": ""}, {"name": "이유찬", "school": "호계", "grade": 7, "note": "금 결석\n주테 화5:00"}, {"name": "주보민", "school": "호계", "grade": 8, "note": "금 결석\n주테 월5:00"}, {"name": "안예린", "school": "호계", "grade": 8, "note": "금 결석\n주테 월8:00"}, {"name": "이재혁", "school": "호계", "grade": 8, "note": ""}, {"name": "정현준", "school": "호계", "grade": 8, "note": ""}, {"name": "황용주", "school": "호계", "grade": 9, "note": ""}, {"name": "이서은", "school": "호계", "grade": 9, "note": ""}, {"name": "김가현", "school": "이화", "grade": 9, "note": ""}, {"name": "조효정", "school": "매곡", "grade": 9, "note": ""}]}, {"className": "M14B 화 목 금", "time": "", "days": "화목금", "students": [{"name": "김주훈", "school": "호계", "grade": 9, "note": "금 결석\n월 5:00 주테응시"}, {"name": "강태은", "school": "호계", "grade": 9, "note": ""}, {"name": "어서진", "school": "호계", "grade": 9, "note": ""}, {"name": "임세현", "school": "호계", "grade": 9, "note": ""}, {"name": "서예솔", "school": "호계", "grade": 9, "note": ""}, {"name": "홍나윤", "school": "호계", "grade": 9, "note": ""}, {"name": "손주현", "school": "매곡", "grade": 9, "note": ""}, {"name": "신해윤", "school": "매곡", "grade": 9, "note": ""}, {"name": "윤채민", "school": "이화", "grade": 9, "note": ""}]}, {"className": "M14E 화 목 금", "time": "", "days": "화목금", "students": [{"name": "김유민", "school": "농소", "grade": 9, "note": ""}, {"name": "노해림", "school": "농소", "grade": 9, "note": ""}, {"name": "김제인", "school": "농소", "grade": 9, "note": ""}, {"name": "이진승", "school": "호계", "grade": 9, "note": ""}, {"name": "김건우B", "school": "호계", "grade": 9, "note": ""}, {"name": "조효진", "school": "매곡", "grade": 9, "note": ""}]}];
-
-var STATUS = {
-  present: { label: "출석", emoji: "✓", color: "#16a34a", bg: "#f0fdf4", border: "#bbf7d0" },
-  late:    { label: "지각", emoji: "🎓", color: "#ea580c", bg: "#fff7ed", border: "#fed7aa" },
-  absent:  { label: "결석", emoji: "✕", color: "#dc2626", bg: "#fef2f2", border: "#fecaca" },
-  video:   { label: "화상", emoji: "📶", color: "#2563eb", bg: "#eff6ff", border: "#bfdbfe" }
-};
-var STATUS_ORDER = ["present", "late", "absent", "video"];
-var NATIVE_DAYS = ["월", "화", "수", "목", "금"];
-var NATIVE_ORDERS = ["1", "2"]; // 1: 원어민 먼저(0~40분), 2: 원어민 나중(40~80분)
-var DOW_LABEL = ["일", "월", "화", "수", "목", "금", "토"];
-var DAYS_BADGE = {
-  "월화수목금": { label: "매일", color: "#0891b2", bg: "#ecfeff" },
-  "월수금": { label: "월수금", color: "#7c3aed", bg: "#f5f3ff" },
-  "화목금": { label: "화목금", color: "#c026d3", bg: "#fdf4ff" },
-  "월수": { label: "월수", color: "#0369a1", bg: "#e0f2fe" },
-  "화목": { label: "화목", color: "#7e22ce", bg: "#f3e8ff" }
-};
-
-function isMiddleSchool(className) { return /^M\d/.test(className.trim()); }
-function isElementary(className) { return !isMiddleSchool(className); }
-
-function pad2(n) { return (n < 10 ? "0" : "") + n; }
-function todayKey(d) { return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate()); }
-function mondayOf(date) {
-  var d = new Date(date);
-  var dow = (d.getDay() + 6) % 7; // Mon=0..Sun=6
-  d.setDate(d.getDate() - dow);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-function weekKey(date) { return todayKey(mondayOf(date)); }
-function escapeHtml(str) {
-  return String(str == null ? "" : str)
-    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
-}
-
-// ---------- 상태 및 Firebase 실시간 연동 ----------
-var state = {
-  view: "list",
-  activeClassName: null,
-  date: new Date(),
-  search: "",
-  meta: {},
-  fridayInfo: {},
-  attendance: {},
-  roster: {},
-  studentOverride: {},
-  extraStudents: {},
-  memoOpenFor: null,
-  rosterMenuFor: null,
-  addingStudent: false,
-  editingStudent: null,
-  filterStatus: null,
-  loaded: false
-};
-
-// Firebase에서 데이터 불러오기 (최초 1회 및 실시간 업데이트)
-const stateRef = ref(db, 'state');
-onValue(stateRef, (snapshot) => {
-  const data = snapshot.val();
-  if (data) {
-    state.meta = data.meta || {};
-    state.fridayInfo = data.fridayInfo || {};
-    state.attendance = data.attendance || {};
-    state.roster = data.roster || {};
-    state.studentOverride = data.studentOverride || {};
-    state.extraStudents = data.extraStudents || {};
-  }
-  state.loaded = true;
-  render();
-});
-
-function syncToFirebase(key) {
-  const updates = {};
-  updates['state/' + key] = state[key];
-  update(ref(db), updates);
-}
-
-function findClass(name) {
-  for (var i = 0; i < RAW_CLASSES.length; i++) {
-    if (RAW_CLASSES[i].className === name) return RAW_CLASSES[i];
-  }
-  return null;
-}
-
-// 반의 전체 학생 목록(원본+신규), quit(퇴원) 제외, override 반영
-function allStudents(className) {
-  var cls = findClass(className);
-  var overrides = (state.studentOverride || {})[className] || {};
-  var base = cls ? cls.students.filter(function(st) {
-    return rosterStatus(className, st.name) !== 'quit';
-  }).map(function(st) {
-    return overrides[st.name] ? Object.assign({}, st, overrides[st.name]) : st;
-  }) : [];
-  var extra = (state.extraStudents[className] || []).filter(function(st) {
-    return rosterStatus(className, st.name) !== 'quit';
-  });
-  return base.concat(extra);
-}
-
-// 학생 재원 상태 반환: 'active'(기본) | 'leave'(휴원) | 'quit'(퇴원)
-function rosterStatus(className, studentName) {
-  return ((state.roster[className] || {})[studentName]) || 'active';
-}
-
-// 활성 학생(재원생)만 반환
-function activeStudents(className) {
-  return allStudents(className).filter(function(s) {
-    return rosterStatus(className, s.name) === 'active';
-  });
-}
-
-function getStudentExtra(className, studentName) {
-  var extra = (state.extraStudents[className] || []).find(function(st) { return st.name === studentName; });
-  if (extra) return { isExtra: true, data: extra };
-  var cls = findClass(className);
-  if (cls) {
-    var base = cls.students.find(function(st) { return st.name === studentName; });
-    if (base) return { isExtra: false, data: base };
-  }
-  return null;
-}
-
-function updateStudentInfo(className, oldName, patch) {
-  var extra = (state.extraStudents[className] || []);
-  var idx = extra.findIndex(function(st) { return st.name === oldName; });
-  if (idx !== -1) {
-    extra[idx] = Object.assign({}, extra[idx], patch);
-    syncToFirebase('extraStudents');
-  } else {
-    if (!state.studentOverride) state.studentOverride = {};
-    if (!state.studentOverride[className]) state.studentOverride[className] = {};
-    state.studentOverride[className][oldName] = Object.assign(
-      {}, state.studentOverride[className][oldName] || {}, patch
-    );
-    syncToFirebase('studentOverride');
-  }
-  if (patch.name && patch.name !== oldName) {
-    if (state.roster[className] && state.roster[className][oldName] !== undefined) {
-      state.roster[className][patch.name] = state.roster[className][oldName];
-      delete state.roster[className][oldName];
-      syncToFirebase('roster');
-    }
-  }
-}
-
-function setRosterStatus(className, studentName, rStatus) {
-  if (!state.roster[className]) state.roster[className] = {};
-  state.roster[className][studentName] = rStatus;
-  syncToFirebase('roster');
-}
-
-function addStudent(className, name, school, grade) {
-  if (!state.extraStudents[className]) state.extraStudents[className] = [];
-  state.extraStudents[className].push({ name: name.trim(), school: school.trim(), grade: grade });
-  syncToFirebase('extraStudents');
-}
-
-function setStudentStatus(className, studentName, status, memo) {
-  var dKey = todayKey(state.date);
-  if (!state.attendance[dKey]) state.attendance[dKey] = {};
-  if (!state.attendance[dKey][className]) state.attendance[dKey][className] = {};
-  var prevMemo = (state.attendance[dKey][className][studentName] || {}).memo || "";
-  state.attendance[dKey][className][studentName] = {
-    status: status,
-    memo: memo !== undefined ? memo : prevMemo
-  };
-  syncToFirebase('attendance');
-}
-
-function clearStudentStatus(className, studentName) {
-  var dKey = todayKey(state.date);
-  if (state.attendance[dKey] && state.attendance[dKey][className]) {
-    delete state.attendance[dKey][className][studentName];
-    syncToFirebase('attendance');
-  }
-}
-
-function updateMeta(className, patch) {
-  state.meta[className] = Object.assign({}, state.meta[className] || {}, patch);
-  syncToFirebase('meta');
-}
-
-function updateFriday(className, patch) {
-  var wKey = weekKey(state.date);
-  if (!state.fridayInfo[wKey]) state.fridayInfo[wKey] = {};
-  state.fridayInfo[wKey][className] = Object.assign({}, state.fridayInfo[wKey][className] || {}, patch);
-  syncToFirebase('fridayInfo');
-}
-
-function computeDayCounts() {
-  var dKey = todayKey(state.date);
-  var dayData = state.attendance[dKey] || {};
-  var counts = { present: 0, late: 0, absent: 0, video: 0, total: 0 };
-  RAW_CLASSES.forEach(function (c) {
-    var classData = dayData[c.className] || {};
-    activeStudents(c.className).forEach(function (st) {
-      counts.total++;
-      var rec = classData[st.name];
-      if (rec && counts.hasOwnProperty(rec.status)) counts[rec.status]++;
-    });
-  });
-  return counts;
-}
-
-// ---------- 렌더링 ----------
-var root = document.getElementById("app");
-
-function refreshClassList() {
-  var listArea = document.getElementById('classListArea');
-  if (!listArea) return;
-  listArea.innerHTML = renderClassListArea();
-  attachClassListEvents();
-}
-
-function render() {
-  if (!state.loaded) {
-    root.innerHTML = '<div style="padding:40px; text-align:center; color:#a8a29e;">데이터를 불러오는 중입니다...</div>';
-    return;
-  }
-  if (state.view === "list") root.innerHTML = renderListView();
-  else if (state.view === "class") root.innerHTML = renderClassView();
-  else if (state.view === "friday") root.innerHTML = renderFridayView();
-  attachEvents();
-}
-
-function renderHeaderDate() {
-  var d = state.date;
-  var dow = d.getDay();
-  var isToday = todayKey(d) === todayKey(new Date());
-  var dowColor = dow === 5 ? "#ea580c" : (dow === 6 || dow === 0 ? "#a8a29e" : "#78716c");
-  return (
-    '<div style="display:flex;align-items:center;gap:10px;">' +
-      '<button class="navbtn" data-action="shiftDate" data-delta="-1">‹</button>' +
-      '<div style="text-align:center;min-width:132px;">' +
-        '<div style="font-size:17px;font-weight:700;letter-spacing:-0.2px;">' +
-          (d.getMonth() + 1) + '월 ' + d.getDate() + '일' +
-          '<span style="color:' + dowColor + ';margin-left:5px;font-weight:600;">(' + DOW_LABEL[dow] + ')</span>' +
-        '</div>' +
-        (isToday ? '' : '<button data-action="goToday" style="border:none;background:none;color:#0891b2;font-size:11px;padding:0;margin-top:1px;">오늘로</button>') +
-      '</div>' +
-      '<button class="navbtn" data-action="shiftDate" data-delta="1">›</button>' +
-    '</div>'
-  );
-}
-
-function renderDaySummary(counts) {
-  var items = [
-    { key: "present", label: "출석" }, { key: "late", label: "지각" },
-    { key: "absent", label: "결석" }, { key: "video", label: "화상" }
-  ];
-  var html = '<div style="display:flex;gap:6px;">';
-  items.forEach(function (it) {
-    var st = STATUS[it.key];
-    var active = state.filterStatus === it.key;
-    html += '<button data-action="toggleFilter" data-status="' + it.key + '" ' +
-      'style="flex:1;background:' + (active ? st.color : st.bg) + ';border:2px solid ' + (active ? st.color : st.border) + ';border-radius:9px;padding:7px 0;text-align:center;transition:all 0.1s;">' +
-      '<div style="font-size:16px;font-weight:800;color:' + (active ? '#fff' : st.color) + ';line-height:1.1;">' + counts[it.key] + '</div>' +
-      '<div style="font-size:10px;color:' + (active ? '#fff' : st.color) + ';font-weight:600;margin-top:1px;">' + it.label + '</div>' +
-    '</button>';
-  });
-  var totalActive = state.filterStatus === null;
-  html += '<button data-action="toggleFilter" data-status="" ' +
-    'style="flex:1;background:' + (totalActive ? '#1c1917' : '#f5f5f4') + ';border:2px solid ' + (totalActive ? '#1c1917' : '#e7e5e4') + ';border-radius:9px;padding:7px 0;text-align:center;">' +
-    '<div style="font-size:16px;font-weight:800;color:' + (totalActive ? '#fff' : '#57534e') + ';line-height:1.1;">' + counts.total + '</div>' +
-    '<div style="font-size:10px;color:' + (totalActive ? '#fff' : '#78716c') + ';font-weight:600;margin-top:1px;">전체</div>' +
-  '</button></div>';
-  return html;
-}
-
-function renderFilterView() {
-  var dKey = todayKey(state.date);
-  var dayData = state.attendance[dKey] || {};
-  var fs = state.filterStatus;
-  var st = STATUS[fs];
-  var results = [];
-
-  RAW_CLASSES.forEach(function (c) {
-    var classData = dayData[c.className] || {};
-    activeStudents(c.className).forEach(function (student) {
-      var rec = classData[student.name];
-      if (rec && rec.status === fs) {
-        results.push({ cls: c, student: student, rec: rec });
-      }
-    });
-  });
-
-  var html = '<div style="padding:12px 16px 0;">';
-
-  if (results.length === 0) {
-    html += '<div style="text-align:center;padding:40px 0;color:#a8a29e;font-size:13px;">' +
-      st.emoji + ' ' + st.label + ' 학생이 없습니다.</div>';
-  } else {
-    html += '<div style="font-size:12px;font-weight:700;color:#a8a29e;margin-bottom:10px;padding-left:2px;">' +
-      st.label + ' ' + results.length + '명</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:7px;">';
-    results.forEach(function (r) {
-      var needCall = (fs === 'absent' || fs === 'late') && !r.rec.memo;
-      html += '<div style="padding:10px 12px;border-radius:11px;border:1px solid ' + st.border + ';background:' + st.bg + ';">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;">' +
-          '<div>' +
-            '<div style="font-weight:700;font-size:14.5px;">' + escapeHtml(r.student.name) +
-              '<span style="font-size:11px;color:' + st.color + ';font-weight:700;margin-left:6px;">' + st.label + '</span>' +
-            '</div>' +
-            '<div style="font-size:11.5px;color:#a8a29e;margin-top:2px;">' +
-              escapeHtml(r.cls.className) +
-              (r.student.school ? (' · ' + escapeHtml(r.student.school)) : '') +
-              (r.student.grade ? (' ' + r.student.grade + '학년') : '') +
-            '</div>' +
-          '</div>' +
-          (needCall ?
-            '<span style="font-size:11px;font-weight:700;color:#dc2626;background:#fef2f2;padding:3px 7px;border-radius:6px;">☏ 연락필요</span>' :
-            '') +
-        '</div>' +
-        (r.rec.memo ?
-          '<div style="margin-top:6px;font-size:12px;color:#57534e;background:rgba(0,0,0,0.04);padding:5px 8px;border-radius:6px;">✎ ' + escapeHtml(r.rec.memo) + '</div>' :
-          '') +
-      '</div>';
-    });
-    html += '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-function renderClassListArea() {
-  var q = state.search.trim().toLowerCase();
-  var filtered = RAW_CLASSES.filter(function (c) {
-    if (!q) return true;
-    if (c.className.toLowerCase().indexOf(q) !== -1) return true;
-    return allStudents(c.className).some(function (s) { return s.name.indexOf(state.search.trim()) !== -1; });
-  });
-
-  var groups = {};
-  var order = ["2:25", "3:25", "4:50", "월수금", "화목금"];
-  filtered.forEach(function (c) {
-    var key = c.time || (c.days === "월수금" ? "월수금" : (c.days === "화목금" ? "화목금" : "기타"));
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(c);
-  });
-  var groupKeys = Object.keys(groups).sort(function (a, b) { return order.indexOf(a) - order.indexOf(b); });
-
-  var html = '<div style="padding:12px 16px 0;">';
-  if (groupKeys.length === 0) {
-    html += '<div style="text-align:center;padding:40px 0;color:#a8a29e;font-size:13px;">검색 결과가 없어요.</div>';
-  }
-  groupKeys.forEach(function (g) {
-    var label = /^\d/.test(g) ? (g + ' 타임') : g;
-    html += '<div style="margin-bottom:18px;">';
-    html += '<div style="font-size:12px;font-weight:700;color:#a8a29e;margin-bottom:8px;padding-left:2px;">' + escapeHtml(label) + '</div>';
-    html += '<div style="display:flex;flex-direction:column;gap:7px;">';
-    groups[g].forEach(function (c) {
-      html += renderClassRow(c);
-    });
-    html += '</div></div>';
-  });
-  html += '</div>';
-  return html;
-}
-
-function attachClassListEvents() {
-  var listArea = document.getElementById('classListArea');
-  if (!listArea) return;
-  listArea.querySelectorAll('[data-action="openClass"]').forEach(function (el) {
-    el.addEventListener('click', function () {
-      state.activeClassName = el.getAttribute('data-class');
-      state.memoOpenFor = null;
-      state.view = "class";
-      render();
-    });
-  });
-}
-
-function attachSummaryEvents() {
-  var el = document.getElementById('daySummary');
-  if (!el) return;
-  el.querySelectorAll('[data-action="toggleFilter"]').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      handleAction('toggleFilter', btn, {});
-    });
-  });
-}
-
-function renderListView() {
-  var dow = state.date.getDay();
+var RAW_CLASSES = [{"className": "Seed 2-5A 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "강소원", "school": "약수", "grade": 1, "note": ""}, {"name": "김연우", "school": "동대", "grade": 1, "note": ""}, {"name": "김윤호", "school": "은월", "grade": 2, "note": ""}, {"name": "오이준", "school": "은월", "grade": 2, "note": ""}, {"name": "김서연", "school": "은월", "grade": 2, "note": ""}, {"name": "이예준", "school": "매산", "grade": 2, "note": ""}, {"name": "김건우A", "school": "농소", "grade": 2, "note": ""}]}, {"className": "Seed 2-5B 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "강리예", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "박서준", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "유슬하", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "김예린", "school": "신천", "grade": 3, "note": "화 3:25 등원"}, {"name": "정연재", "school": "매산", "grade": 3, "note": "목 늦"}, {"name": "서정연", "school": "매산", "grade": 3, "note": "화 원어민참여\n목 늦\n금 늦 4:40 등원"}, {"name": "김정윤", "school": "은월", "grade": 3, "note": "목 3:25등원"}, {"name": "김나연b", "school": "은월", "grade": 3, "note": "목 3:25등원"}]}, {"className": "Seed 2-5C 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "윤석민", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "박시현b", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "김준우", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "윤다현", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "이연서", "school": "신천", "grade": 3, "note": "화 3:25등원"}, {"name": "김나경B", "school": "매곡", "grade": 3, "note": "화 3:25등원"}, {"name": "이시형", "school": "매산", "grade": 4, "note": "목 늦"}, {"name": "백지유", "school": "은월", "grade": 4, "note": "목 3:25등원"}]}, {"className": "Sp AA 2:25", "time": "2:25", "days": "월화수목금", "students": [{"name": "최현규", "school": "농소", "grade": 3, "note": "화 3:25등원"}, {"name": "최수영", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "최규현", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "송수하", "school": "농소", "grade": 4, "note": "화 3:25등원"}, {"name": "윤지후", "school": "매곡", "grade": 4, "note": "화 3:25등원"}, {"name": "이지효", "school": "매산", "grade": 3, "note": "목 늦\n금 2:55 원어민참여"}, {"name": "김라희", "school": "매산", "grade": 4, "note": "수목 늦\n금 2:55 원어민참여\n목 4:20 랩 등원"}, {"name": "전시안", "school": "은월", "grade": 4, "note": "목 3:25등원\n금 2:55 원어민참여"}, {"name": "임예준", "school": "중산", "grade": 4, "note": "목 3:25등원\n금 2:55 원어민참여"}]}, {"className": "Sp BA 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "이수빈", "school": "매산", "grade": 2, "note": ""}, {"name": "정소민", "school": "매산", "grade": 3, "note": ""}, {"name": "최아윤", "school": "농소", "grade": 3, "note": ""}, {"name": "김민채", "school": "농소", "grade": 3, "note": ""}, {"name": "황수민", "school": "매산", "grade": 4, "note": ""}, {"name": "김솔", "school": "매산", "grade": 4, "note": ""}, {"name": "장이안", "school": "매산", "grade": 4, "note": ""}, {"name": "박윤호", "school": "매산", "grade": 4, "note": ""}]}, {"className": "Bud AA 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "오주한", "school": "매산", "grade": 2, "note": ""}, {"name": "오유나", "school": "매산", "grade": 2, "note": ""}, {"name": "이민섭", "school": "매산", "grade": 3, "note": ""}, {"name": "이진율", "school": "은월", "grade": 3, "note": ""}, {"name": "윤종욱", "school": "은월", "grade": 3, "note": ""}, {"name": "강승우", "school": "은월", "grade": 4, "note": ""}, {"name": "정세인", "school": "농소", "grade": 3, "note": ""}, {"name": "이윤서", "school": "중산", "grade": 4, "note": ""}, {"name": "이예진", "school": "매산", "grade": 4, "note": ""}, {"name": "이예빈", "school": "매산", "grade": 4, "note": ""}, {"name": "이서진", "school": "매산", "grade": 4, "note": "매일4:25하원\n목 3:00 등원"}]}, {"className": "Bud AB 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "진하현", "school": "신천", "grade": 4, "note": ""}, {"name": "김한율", "school": "은월", "grade": 4, "note": ""}, {"name": "남서연", "school": "중산", "grade": 4, "note": ""}, {"name": "김현서", "school": "중산", "grade": 4, "note": ""}, {"name": "강태훈", "school": "매곡", "grade": 4, "note": ""}, {"name": "김종윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "김민준B", "school": "매산", "grade": 5, "note": ""}, {"name": "강민호", "school": "매산", "grade": 5, "note": ""}, {"name": "박민준", "school": "매산", "grade": 5, "note": ""}, {"name": "정은수", "school": "은월", "grade": 5, "note": "수4:50등원"}]}, {"className": "E3A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "김윤설", "school": "매산", "grade": 4, "note": ""}, {"name": "오연서", "school": "매산", "grade": 4, "note": "목금 10분 늦"}, {"name": "노지현", "school": "농소", "grade": 4, "note": ""}, {"name": "김서우", "school": "농소", "grade": 4, "note": ""}, {"name": "서주은", "school": "중산", "grade": 4, "note": ""}, {"name": "최아인", "school": "중산", "grade": 4, "note": ""}, {"name": "최서인", "school": "중산", "grade": 4, "note": "월수목만 등원\n월수목 남아서 숙제 후 주테응시"}, {"name": "양인서", "school": "은월", "grade": 5, "note": "목4:50 등원"}, {"name": "안윤서", "school": "매곡", "grade": 5, "note": ""}, {"name": "김채아", "school": "매곡", "grade": 6, "note": ""}]}, {"className": "E4A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "남예린", "school": "동대", "grade": 3, "note": ""}, {"name": "진소윤", "school": "동대", "grade": 4, "note": ""}, {"name": "하도담", "school": "중산", "grade": 4, "note": ""}, {"name": "이승윤", "school": "매산", "grade": 4, "note": ""}, {"name": "신준영", "school": "매산", "grade": 5, "note": ""}, {"name": "홍효주", "school": "매산", "grade": 5, "note": ""}, {"name": "임태준", "school": "매산", "grade": 5, "note": "화목 4:50등원\n원어민 목E3B참여"}, {"name": "손준원", "school": "매곡", "grade": 6, "note": ""}, {"name": "서지니", "school": "은월", "grade": 6, "note": ""}]}, {"className": "E5A 3:25", "time": "3:25", "days": "월화수목금", "students": [{"name": "박나연", "school": "매곡", "grade": 4, "note": ""}, {"name": "김지환a", "school": "매산", "grade": 4, "note": ""}, {"name": "이재인", "school": "동대", "grade": 4, "note": ""}, {"name": "허재원", "school": "은월", "grade": 4, "note": ""}, {"name": "이윤교", "school": "은월", "grade": 4, "note": ""}, {"name": "김도예", "school": "은월", "grade": 5, "note": ""}, {"name": "신은세", "school": "매곡", "grade": 5, "note": ""}, {"name": "정시우", "school": "약수", "grade": 5, "note": "화목 컴퓨터 5분 늦"}]}, {"className": "E3B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "최희유", "school": "은월", "grade": 5, "note": ""}, {"name": "안예나", "school": "은월", "grade": 5, "note": ""}, {"name": "안예서", "school": "은월", "grade": 5, "note": ""}, {"name": "윤주원", "school": "매산", "grade": 5, "note": ""}, {"name": "황가은", "school": "매산", "grade": 5, "note": ""}, {"name": "권도진", "school": "매산", "grade": 5, "note": "월수 수학 5:00"}, {"name": "유수현", "school": "신천", "grade": 5, "note": "월수금 수학 늦"}, {"name": "이채원", "school": "중산", "grade": 5, "note": ""}, {"name": "허지윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "정하율", "school": "동대", "grade": 5, "note": ""}]}, {"className": "E3C 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "신은서", "school": "매산", "grade": 5, "note": "늦"}, {"name": "김도한", "school": "매산", "grade": 5, "note": ""}, {"name": "박세은", "school": "농소", "grade": 5, "note": ""}, {"name": "황예림", "school": "농소", "grade": 5, "note": ""}, {"name": "김하연", "school": "은월", "grade": 5, "note": ""}, {"name": "권나윤", "school": "매곡", "grade": 5, "note": ""}, {"name": "김보미", "school": "약수", "grade": 6, "note": ""}, {"name": "예우주", "school": "약수", "grade": 6, "note": ""}, {"name": "임예지", "school": "중산", "grade": 6, "note": ""}]}, {"className": "E4B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "백종현", "school": "매산", "grade": 5, "note": ""}, {"name": "김준영", "school": "농소", "grade": 5, "note": "월수금 수학 늦"}, {"name": "박서우", "school": "농소", "grade": 5, "note": "월수금 수학 늦"}, {"name": "김예준", "school": "농소", "grade": 5, "note": ""}, {"name": "장유영", "school": "농소", "grade": 5, "note": ""}, {"name": "박성빈", "school": "농소", "grade": 5, "note": ""}, {"name": "박진서", "school": "은월", "grade": 5, "note": ""}, {"name": "김민준A", "school": "은월", "grade": 5, "note": ""}, {"name": "윤서연", "school": "매곡", "grade": 5, "note": ""}, {"name": "김민재", "school": "매곡", "grade": 5, "note": ""}]}, {"className": "E5B 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "한서음", "school": "농소", "grade": 5, "note": ""}, {"name": "남일우", "school": "매곡", "grade": 5, "note": ""}, {"name": "이봄", "school": "중산", "grade": 5, "note": ""}, {"name": "허도현", "school": "중산", "grade": 5, "note": ""}, {"name": "김윤아", "school": "은월", "grade": 5, "note": ""}, {"name": "천서훈", "school": "은월", "grade": 5, "note": ""}, {"name": "안예준", "school": "은월", "grade": 5, "note": ""}, {"name": "황다연", "school": "은월", "grade": 5, "note": ""}]}, {"className": "E5C 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "김나혜", "school": "매산", "grade": 5, "note": ""}, {"name": "박가람", "school": "은월", "grade": 5, "note": ""}, {"name": "전아린", "school": "은월", "grade": 6, "note": ""}, {"name": "임세아", "school": "은월", "grade": 6, "note": ""}, {"name": "구도아", "school": "은월", "grade": 6, "note": ""}, {"name": "설민석", "school": "은월", "grade": 6, "note": ""}, {"name": "최준성", "school": "은월", "grade": 6, "note": ""}, {"name": "김범", "school": "매산", "grade": 6, "note": ""}, {"name": "변지후", "school": "매산", "grade": 6, "note": ""}]}, {"className": "E6A 4:50", "time": "4:50", "days": "월화수목금", "students": [{"name": "박송희", "school": "매산", "grade": 5, "note": ""},_chw
   var counts = computeDayCounts();
 
   var html = '<div style="position:sticky;top:0;z-index:10;background:#fafaf9;border-bottom:1px solid #e7e5e4;padding:14px 16px 12px;">';
   html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">';
-  html += '<div style="font-size:13px;font-weight:700;color:#a8a29e;letter-spacing:1px;">출
+  html += '<div style="font-size:13px;font-weight:700;color:#a8a29e;letter-spacing:1px;">출석부</div>';
+  html += renderHeaderDate();
+  html += '<button class="navbtn" data-action="openFriday" style="position:relative;' + (dow === 5 ? 'background:#fff7ed;' : '') + '">' +
+    '<span style="font-size:15px;color:' + (dow === 5 ? '#ea580c' : '#a8a29e') + ';">⇄</span>' +
+    (dow === 5 ? '<span style="position:absolute;top:-3px;right:-3px;width:8px;height:8px;border-radius:4px;background:#ea580c;"></span>' : '') +
+  '</button>';
+  html += '</div>';
+  html += '<div id="daySummary">' + renderDaySummary(counts) + '</div>';
+  html += '<div style="margin-top:10px;position:relative;">' +
+    '<span style="position:absolute;left:10px;top:9px;color:#a8a29e;font-size:13px;">🔍</span>' +
+    '<input id="searchInput" value="' + escapeHtml(state.search) + '" placeholder="반 이름 또는 학생 이름 검색" ' +
+    'style="width:100%;padding:9px 10px 9px 30px;border-radius:9px;border:1px solid #e7e5e4;font-size:13.5px;background:#fff;outline:none;" />' +
+  '</div>';
+  html += '</div>';
+  html += '<div id="classListArea">' + (state.filterStatus ? renderFilterView() : renderClassListArea()) + '</div>';
+  return html;
+}
+
+function renderClassRow(c) {
+  var m = state.meta[c.className] || {};
+  var elem = isElementary(c.className);
+  var effectiveDays = (c.days === "월화수목금" && m.elemDays) ? m.elemDays : c.days;
+  var badge = DAYS_BADGE[effectiveDays] || { label: effectiveDays, color: "#78716c", bg: "#f5f5f4" };
+  var nativeBadge = (elem && m.nativeDay) ?
+    '<span style="font-size:10.5px;font-weight:700;color:#2563eb;background:#eff6ff;padding:2px 6px;border-radius:5px;">원어민 ' + escapeHtml(m.nativeDay) + '</span>' : '';
+  var dow = state.date.getDay();
+  var wKey = weekKey(state.date);
+  var friInfo = ((state.fridayInfo[wKey] || {})[c.className] || {});
+  var friBadge = '';
+  if (dow === 5 && !isMiddleSchool(c.className)) {
+    if (friInfo.order === 'room-first') {
+      friBadge = '<span style="font-size:10.5px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:5px;">🔵 교실먼저</span>';
+    } else if (friInfo.order === 'lab-first') {
+      friBadge = '<span style="font-size:10.5px;font-weight:700;color:#15803d;background:#dcfce7;padding:2px 6px;border-radius:5px;">🟢 랩실먼저</span>';
+    }
+  }
+  var elemDaysBadge = '';
+  if (c.days === "월화수목금" && m.elemDays) {
+    var edColor = m.elemDays === "월수" ? "#0369a1" : "#7e22ce";
+    var edBg = m.elemDays === "월수" ? "#e0f2fe" : "#f3e8ff";
+    elemDaysBadge = '<span style="font-size:10.5px;font-weight:700;color:' + edColor + ';background:' + edBg + ';padding:2px 6px;border-radius:5px;">📅 ' + m.elemDays + '</span>';
+  }
+  return (
+    '<button class="classRowBtn" data-action="openClass" data-class="' + escapeHtml(c.className) + '" ' +
+    'style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:11px;border:1px solid #e7e5e4;background:#fff;text-align:left;width:100%;">' +
+      '<div style="width:4px;height:30px;border-radius:2px;background:' + badge.color + ';flex-shrink:0;"></div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+          '<span style="font-weight:700;font-size:14.5px;">' + escapeHtml(c.className) + '</span>' +
+          '<span style="font-size:10.5px;font-weight:700;color:' + badge.color + ';background:' + badge.bg + ';padding:2px 6px;border-radius:5px;">' + escapeHtml(badge.label) + '</span>' +
+          nativeBadge + elemDaysBadge + friBadge +
+        '</div>' +
+        '<div style="font-size:12px;color:#a8a29e;margin-top:2px;">학생 ' + activeStudents(c.className).length + '명' + (m.room ? (' · ' + escapeHtml(m.room) + '호') : ' · 교실 미입력') + '</div>' +
+      '</div>' +
+      '<span style="color:#d6d3d1;font-size:18px;">›</span>' +
+    '</button>'
+  );
+}
+
+function renderClassView() {
+  var cls = findClass(state.activeClassName);
+  if (!cls) { state.view = "list"; return renderListView(); }
+  var dKey = todayKey(state.date);
+  var wKey = weekKey(state.date);
+  var dow = state.date.getDay();
+  var m = state.meta[cls.className] || {};
+  var middle = isMiddleSchool(cls.className);
+  var elem = isElementary(cls.className);
+  var dayData = (state.attendance[dKey] || {})[cls.className] || {};
+  var fri = (state.fridayInfo[wKey] || {})[cls.className] || {};
+
+  var actives = activeStudents(cls.className);
+  var allSts = allStudents(cls.className);
+  var counts = {};
+  STATUS_ORDER.forEach(function (s) {
+    counts[s] = actives.filter(function (st) { return dayData[st.name] && dayData[st.name].status === s; }).length;
+  });
+  var uncalled = actives.filter(function (st) {
+    var rec = dayData[st.name];
+    return rec && (rec.status === "absent" || rec.status === "late") && !rec.memo;
+  });
+
+  var html = '<div style="position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e7e5e4;padding:12px 16px;">';
+  html += '<div style="display:flex;align-items:center;gap:10px;">';
+  html += '<button class="navbtn" data-action="backToList" style="width:32px;">‹</button>';
+  html += '<div style="flex:1;min-width:0;">' +
+    '<div style="font-weight:800;font-size:16.5px;letter-spacing:-0.2px;">' + escapeHtml(cls.className) + '</div>' +
+    '<div style="font-size:12px;color:#a8a29e;">' + (state.date.getMonth() + 1) + '월 ' + state.date.getDate() + '일 (' + DOW_LABEL[dow] + ') · 학생 ' + activeStudents(cls.className).length + '명</div>' +
+  '</div></div>';
+
+  html += '<div style="display:flex;gap:6px;margin-top:11px;flex-wrap:wrap;align-items:flex-start;">';
+  html += '<button class="chip ' + (m.room ? 'active-room' : '') + '" data-action="editRoom">🚪 ' + (m.room ? (escapeHtml(m.room) + '호') : '교실 입력') + '</button>';
+  if (elem && cls.days === "월화수목금") {
+    var ed = m.elemDays;
+    html += '<button class="chip ' + (ed === '월수' ? 'active-blue2' : ed === '화목' ? 'active-purple' : '') + '" data-action="toggleElemDays">' +
+      (ed === '월수' ? '📅 월수반' : ed === '화목' ? '📅 화목반' : '📅 요일 구분') + '</button>';
+  }
+  if (elem) {
+    html += '<div style="position:relative;display:inline-block;">';
+    html += '<button class="chip ' + (m.nativeDay ? 'active-blue' : '') + '" data-action="toggleNativeMenu">📶 ' + (m.nativeDay ? ('원어민 ' + escapeHtml(m.nativeDay)) : '원어민 요일 설정') + '</button>';
+    html += '<div id="nativeMenu" style="display:none;position:absolute;top:32px;left:0;z-index:20;background:#fff;border:1px solid #e7e5e4;border-radius:10px;padding:8px;box-shadow:0 4px 16px rgba(0,0,0,0.08);">';
+    html += '<div style="font-size:10px;color:#a8a29e;font-weight:700;margin-bottom:5px;padding-left:2px;">요일 + 순서 (1=먼저, 2=40분 후)</div>';
+    NATIVE_ORDERS.forEach(function (ord) {
+      html += '<div style="display:flex;gap:4px;margin-bottom:4px;">';
+      NATIVE_DAYS.forEach(function (d) {
+        var label = d + ord;
+        var active = m.nativeDay === label;
+        html += '<button data-action="setNativeDay" data-day="' + label + '" style="width:34px;height:28px;border-radius:7px;background:' + (active ? '#2563eb' : '#f5f5f4') + ';color:' + (active ? '#fff' : '#57534e') + ';font-size:12px;font-weight:700;">' + label + '</button>';
+      });
+      html += '</div>';
+    });
+    if (m.nativeDay) {
+      html += '<button data-action="clearNativeDay" style="width:100%;margin-top:3px;padding:5px 0;border-radius:7px;background:#fef2f2;color:#dc2626;font-size:11px;font-weight:700;">설정 해제</button>';
+    }
+    html += '</div></div>';
+  }
+  if (!middle) {
+    var orderLabel = fri.order === "lab-first" ? "랩실 먼저" : (fri.order === "room-first" ? "교실 먼저" : "금요일 순서 미정");
+    html += '<button class="chip active-cyan" data-action="toggleFridayOrder">⇄ ' + orderLabel + '</button>';
+  } else {
+    html += '<button class="chip ' + (fri.middleRoom ? 'active-cyan' : '') + '" data-action="editFriRoom">🧪 ' + (fri.middleRoom ? ('금요일 ' + escapeHtml(fri.middleRoom) + '호') : '금요일 교실 미정') + '</button>';
+  }
+  html += '</div>';
+
+  html += '<div id="inlineEditArea"></div>';
+
+  html += '<div style="display:flex;gap:5px;margin-top:10px;">';
+  STATUS_ORDER.forEach(function (s) {
+    var st = STATUS[s];
+    html += '<div style="flex:1;text-align:center;padding:5px 0;border-radius:7px;background:' + st.bg + ';border:1px solid ' + st.border + ';">' +
+      '<span style="font-size:13px;font-weight:800;color:' + st.color + ';">' + counts[s] + '</span>' +
+      '<span style="font-size:10px;color:' + st.color + ';margin-left:3px;">' + st.label + '</span>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  if (uncalled.length > 0) {
+    html += '<div style="margin-top:8px;font-size:11.5px;color:#dc2626;">☏ 연락 미확인 ' + uncalled.length + '명: ' + uncalled.map(function (s) { return escapeHtml(s.name); }).join(", ") + '</div>';
+  }
+  html += '</div>';
+
+  html += '<div style="padding:10px 16px 24px;">';
+
+  allSts.forEach(function (s) {
+    var rs = rosterStatus(cls.className, s.name);
+    var isInactive = rs === 'leave' || rs === 'quit';
+    var rec = isInactive ? null : dayData[s.name];
+    var status = rec ? rec.status : null;
+    var st = status ? STATUS[status] : null;
+    var rsBadge = rs === 'leave'
+      ? '<span style="font-size:10px;font-weight:700;background:#fef9c3;color:#a16207;padding:2px 6px;border-radius:5px;margin-left:5px;">휴원</span>'
+      : rs === 'quit'
+      ? '<span style="font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:5px;margin-left:5px;">퇴원</span>'
+      : '';
+    var menuOpen = state.rosterMenuFor === s.name;
+
+    html += '<div style="margin-bottom:8px;' + (isInactive ? 'opacity:0.4;' : '') + '">';
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:11px;' +
+      (isInactive ? 'border:1px solid #e7e5e4;background:#f5f5f4;' :
+        'border:1px solid ' + (st ? st.border : '#e7e5e4') + ';background:' + (st ? st.bg : '#fff') + ';cursor:pointer;') + '"' +
+      (isInactive ? '' : ' class="studentRow" data-action="cycleStatus" data-student="' + escapeHtml(s.name) + '"') + '>';
+
+    html += '<div style="flex:1;min-width:0;">' +
+      '<div style="font-weight:700;font-size:14.5px;">' + escapeHtml(s.name) + rsBadge + '</div>' +
+      '<div style="font-size:11.5px;color:#a8a29e;margin-top:1px;">' +
+        (s.school ? (escapeHtml(s.school) + ' ') : '') + (s.grade ? (s.grade + '학년') : '') +
+        (s.note ? (' · ' + escapeHtml(String(s.note).split("\n")[0])) : '') +
+      '</div></div>';
+
+    if (!isInactive) {
+      if (st) {
+        html += '<div style="display:flex;align-items:center;gap:6px;">' +
+          '<span style="font-size:12.5px;font-weight:800;color:' + st.color + ';">' + st.label + '</span>' +
+          '<button data-action="clearStatus" data-student="' + escapeHtml(s.name) + '" ' +
+          'style="border:none;background:rgba(0,0,0,0.06);border-radius:6px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;color:#78716c;">✕</button>' +
+        '</div>';
+      } else {
+        html += '<span style="font-size:12px;color:#d6d3d1;font-weight:600;">탭하여 체크</span>';
+      }
+    }
+
+    html += '<div style="position:relative;margin-left:4px;">';
+    html += '<button data-action="toggleRosterMenu" data-student="' + escapeHtml(s.name) + '" ' +
+      'style="width:26px;height:26px;border-radius:6px;background:none;border:none;font-size:16px;color:#a8a29e;line-height:1;">⋮</button>';
+    if (menuOpen) {
+      html += '<div style="position:absolute;right:0;top:28px;z-index:30;background:#fff;border:1px solid #e7e5e4;border-radius:10px;padding:5px;box-shadow:0 4px 16px rgba(0,0,0,0.1);min-width:100px;">';
+      html += '<button data-action="startEditStudent" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#2563eb;background:none;">✎ 정보 수정</button>';
+      if (rs === 'active') {
+        html += '<button data-action="setRoster" data-student="' + escapeHtml(s.name) + '" data-rs="leave" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#a16207;background:none;">휴원 처리</button>';
+        html += '<button data-action="setRoster" data-student="' + escapeHtml(s.name) + '" data-rs="quit" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#dc2626;background:none;">퇴원 처리</button>';
+      } else {
+        html += '<button data-action="setRoster" data-student="' + escapeHtml(s.name) + '" data-rs="active" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#16a34a;background:none;">복귀 처리</button>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+
+    if (!isInactive && (status === "absent" || status === "late")) {
+      html += '<div style="margin-top:5px;margin-left:4px;">';
+      if (state.memoOpenFor === s.name) {
+        html += '<div style="display:flex;gap:6px;">' +
+          '<input id="memoInput" data-student="' + escapeHtml(s.name) + '" value="' + escapeHtml(rec.memo || "") + '" placeholder="사유 메모 (예: 감기, 내일 등원)" ' +
+          'style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;" />' +
+          '<button data-action="saveMemo" data-student="' + escapeHtml(s.name) + '" style="padding:0 14px;border-radius:8px;background:#1c1917;color:#fff;font-size:12.5px;font-weight:700;">저장</button>' +
+        '</div>';
+      } else {
+        html += '<button data-action="openMemo" data-student="' + escapeHtml(s.name) + '" ' +
+          'style="display:flex;align-items:center;gap:5px;padding:2px 4px;color:' + (rec.memo ? '#57534e' : '#dc2626') + ';">' +
+          '<span style="font-size:11px;">✎</span>' +
+          '<span style="font-size:12px;font-weight:' + (rec.memo ? '500' : '700') + ';">' + escapeHtml(rec.memo || "전화 확인 후 사유 입력") + '</span>' +
+        '</button>';
+      }
+      html += '</div>';
+    }
+
+    if (state.editingStudent === s.name) {
+      var ov = ((state.studentOverride || {})[cls.className] || {})[s.name] || {};
+      var curName = ov.name || s.name;
+      var curSchool = ov.school !== undefined ? ov.school : (s.school || '');
+      var curGrade = ov.grade !== undefined ? ov.grade : (s.grade || '');
+      var curNote = ov.note !== undefined ? ov.note : (s.note || '');
+      html += '<div style="background:#eff6ff;border-radius:10px;padding:11px 12px;margin-top:5px;">' +
+        '<div style="font-size:11.5px;font-weight:700;color:#2563eb;margin-bottom:8px;">학생 정보 수정</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;">' +
+          '<input id="editName_' + oldName + '" value="' + escapeHtml(curName) + '" placeholder="이름" style="padding:7px 10px;border-radius:7px;border:1px solid #bfdbfe;font-size:13px;" />' +
+          '<div style="display:flex;gap:5px;">' +
+            '<input id="editSchool_' + oldName + '" value="' + escapeHtml(curSchool) + '" placeholder="학교명" style="flex:1;padding:7px 10px;border-radius:7px;border:1px solid #bfdbfe;font-size:13px;" />' +
+            '<input id="editGrade_' + oldName + '" value="' + escapeHtml(String(curGrade)) + '" placeholder="학년" type="number" style="width:65px;padding:7px 9px;border-radius:7px;border:1px solid #bfdbfe;font-size:13px;" />' +
+          '</div>' +
+          '<input id="editNote_' + oldName + '" value="' + escapeHtml(curNote) + '" placeholder="특이사항 (예: 화 3:25 등원)" style="padding:7px 10px;border-radius:7px;border:1px solid #bfdbfe;font-size:13px;" />' +
+          '<div style="display:flex;gap:6px;margin-top:2px;">' +
+            '<button data-action="confirmEditStudent" data-student="' + escapeHtml(s.name) + '" style="flex:1;padding:8px 0;border-radius:7px;background:#2563eb;color:#fff;font-size:12.5px;font-weight:700;">저장</button>' +
+            '<button data-action="cancelEditStudent" style="padding:8px 12px;border-radius:7px;border:1px solid #bfdbfe;background:#fff;font-size:12.5px;color:#78716c;">취소</button>' +
+          '</div>' +
+        '</div></div>';
+    }
+
+    html += '</div>';
+  });
+
+  if (state.addingStudent) {
+    html += '<div style="background:#f5f5f4;border-radius:11px;padding:12px;margin-top:4px;">' +
+      '<div style="font-size:12px;font-weight:700;color:#78716c;margin-bottom:8px;">신규생 추가</div>' +
+      '<div style="display:flex;flex-direction:column;gap:7px;">' +
+        '<input id="newStudentName" placeholder="이름 *" style="padding:8px 10px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;" />' +
+        '<div style="display:flex;gap:6px;">' +
+          '<input id="newStudentSchool" placeholder="학교명" style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;" />' +
+          '<input id="newStudentGrade" placeholder="학년" type="number" min="1" max="15" style="width:70px;padding:8px 10px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;" />' +
+        '</div>' +
+        '<div style="display:flex;gap:6px;">' +
+          '<button data-action="confirmAddStudent" style="flex:1;padding:9px 0;border-radius:8px;background:#1c1917;color:#fff;font-size:13px;font-weight:700;">추가</button>' +
+          '<button data-action="cancelAddStudent" style="padding:9px 14px;border-radius:8px;border:1px solid #e7e5e4;background:#fff;font-size:13px;color:#78716c;">취소</button>' +
+        '</div>' +
+      '</div></div>';
+  } else {
+    html += '<button data-action="startAddStudent" style="width:100%;margin-top:8px;padding:11px 0;border-radius:11px;border:2px dashed #e7e5e4;background:none;font-size:13px;font-weight:700;color:#a8a29e;">+ 신규생 추가</button>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+function renderFridayView() {
+  var wKey = weekKey(state.date);
+  var weekData = state.fridayInfo[wKey] || {};
+  var elemClasses = RAW_CLASSES.filter(function (c) { return !isMiddleSchool(c.className); });
+  var middleClasses = RAW_CLASSES.filter(function (c) { return isMiddleSchool(c.className); });
+
+  var monday = mondayOf(state.date);
+  var friday = new Date(monday);
+  friday.setDate(monday.getDate() + 4);
+
+  var html = '<div style="position:sticky;top:0;z-index:10;background:#fff;border-bottom:1px solid #e7e5e4;padding:12px 16px;">';
+  html += '<div style="display:flex;align-items:center;gap:10px;">';
+  html += '<button class="navbtn" data-action="backToList" style="width:32px;">‹</button>';
+  html += '<div><div style="font-weight:800;font-size:16.5px;">금요일 로테이션</div>' +
+    '<div style="font-size:12px;color:#a8a29e;">' + (friday.getMonth() + 1) + '월 ' + friday.getDate() + '일 금요일 기준 · 매주 갱신</div></div>';
+  html += '</div></div>';
+
+  html += '<div style="padding:14px 16px;">';
+  html += '<div style="margin-bottom:22px;">';
+  html += '<div style="font-size:12.5px;font-weight:700;color:#78716c;margin-bottom:9px;">📅 유·초등부 — 교실 ⇄ 랩실 순서 (40분씩 로테이션)</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:7px;">';
+  elemClasses.forEach(function (c) {
+    var fri = weekData[c.className] || {};
+    var room = (state.meta[c.className] || {}).room;
+    var cardBg = fri.order === "room-first" ? "#eff6ff" : fri.order === "lab-first" ? "#f0fdf4" : "#fff";
+    var cardBorder = fri.order === "room-first" ? "#bfdbfe" : fri.order === "lab-first" ? "#bbf7d0" : "#e7e5e4";
+    var labelColor = fri.order === "room-first" ? "#1d4ed8" : fri.order === "lab-first" ? "#15803d" : "#a8a29e";
+    var orderLabel = fri.order === "room-first" ? "🔵 교실 먼저" : fri.order === "lab-first" ? "🟢 랩실 먼저" : "미정";
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid ' + cardBorder + ';background:' + cardBg + ';">' +
+      '<div style="flex:1;">' +
+        '<div style="font-weight:700;font-size:13.5px;">' + escapeHtml(c.className) + '</div>' +
+        '<div style="font-size:11px;color:#a8a29e;">' + (room ? (escapeHtml(room) + '호') : '교실 미입력') + '</div>' +
+        '<div style="font-size:11px;font-weight:700;color:' + labelColor + ';margin-top:2px;">' + orderLabel + '</div>' +
+      '</div>' +
+      '<div style="display:flex;border-radius:8px;overflow:hidden;border:1px solid #e7e5e4;">' +
+        '<button data-action="setFridayOrder" data-class="' + escapeHtml(c.className) + '" data-order="room-first" ' +
+        'style="padding:6px 10px;font-size:11.5px;font-weight:700;background:' + (fri.order === "room-first" ? "#1d4ed8" : "#fafaf9") + ';color:' + (fri.order === "room-first" ? "#fff" : "#78716c") + ';">교실</button>' +
+        '<button data-action="setFridayOrder" data-class="' + escapeHtml(c.className) + '" data-order="lab-first" ' +
+        'style="padding:6px 10px;font-size:11.5px;font-weight:700;background:' + (fri.order === "lab-first" ? "#15803d" : "#fafaf9") + ';color:' + (fri.order === "lab-first" ? "#fff" : "#78716c") + ';">랩실</button>' +
+      '</div></div>';
+  });
+  html += '</div></div>';
+
+  html += '<div style="margin-bottom:22px;">';
+  html += '<div style="font-size:12.5px;font-weight:700;color:#78716c;margin-bottom:9px;">📅 중등부 — 이번 주 금요일 교실</div>';
+  html += '<div style="display:flex;flex-direction:column;gap:7px;">';
+  middleClasses.forEach(function (c) {
+    var fri = weekData[c.className] || {};
+    html += '<div style="display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid #e7e5e4;background:#fff;">' +
+      '<div style="flex:1;font-weight:700;font-size:13.5px;">' + escapeHtml(c.className) + '</div>' +
+      '<input data-action="middleFriRoomInput" data-class="' + escapeHtml(c.className) + '" value="' + escapeHtml(fri.middleRoom || "") + '" placeholder="교실 번호" ' +
+      'style="width:90px;padding:7px 9px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;text-align:center;" />' +
+    '</div>';
+  });
+  html += '</div></div>';
+  html += '</div>';
+  return html;
+}
+
+function attachEvents() {
+  root.querySelectorAll('[data-action]').forEach(function (el) {
+    var action = el.getAttribute('data-action');
+    if (action === "middleFriRoomInput") {
+      el.addEventListener('blur', function () {
+        updateFriday(el.getAttribute('data-class'), { middleRoom: el.value.trim() });
+      });
+      el.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { updateFriday(el.getAttribute('data-class'), { middleRoom: el.value.trim() }); el.blur(); }
+      });
+      return;
+    }
+    if (action === "memoInput") return;
+    if (action === "openClass") return;
+    el.addEventListener('click', function (e) {
+      handleAction(action, el, e);
+    });
+  });
+
+  var searchInput = document.getElementById('searchInput');
+  if (searchInput) {
+    searchInput.addEventListener('compositionstart', function () {
+      searchInput._composing = true;
+    });
+    searchInput.addEventListener('compositionend', function () {
+      searchInput._composing = false;
+      state.search = searchInput.value;
+      refreshClassList();
+    });
+    searchInput.addEventListener('input', function () {
+      if (searchInput._composing) return;
+      state.search = searchInput.value;
+      refreshClassList();
+    });
+  }
+
+  attachClassListEvents();
+  attachSummaryEvents();
+
+  var memoInput = document.getElementById('memoInput');
+  if (memoInput) {
+    memoInput.focus();
+    memoInput.setSelectionRange(memoInput.value.length, memoInput.value.length);
+    memoInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        var student = memoInput.getAttribute('data-student');
+        var dKey = todayKey(state.date);
+        var rec = (state.attendance[dKey] || {})[state.activeClassName] || {};
+        var cur = rec[student] || {};
+        setStudentStatus(state.activeClassName, student, cur.status, memoInput.value.trim());
+        state.memoOpenFor = null;
+        render();
+      }
+    });
+  }
+}
+
+function handleAction(action, el, e) {
+  if (action === "shiftDate") {
+    var delta = parseInt(el.getAttribute('data-delta'), 10);
+    var d = new Date(state.date);
+    d.setDate(d.getDate() + delta);
+    state.date = d;
+    state.filterStatus = null;
+    render();
+  } else if (action === "goToday") {
+    state.date = new Date();
+    state.filterStatus = null;
+    render();
+  } else if (action === "openFriday") {
+    state.view = "friday";
+    render();
+  } else if (action === "openClass") {
+    state.activeClassName = el.getAttribute('data-class');
+    state.memoOpenFor = null;
+    state.view = "class";
+    render();
+  } else if (action === "backToList") {
+    state.view = "list";
+    render();
+  } else if (action === "editRoom") {
+    var cls = findClass(state.activeClassName);
+    var m = state.meta[cls.className] || {};
+    showInlineEdit(m.room || "", "예: 302", function (val) {
+      updateMeta(cls.className, { room: val.trim() });
+      render();
+    });
+  } else if (action === "editFriRoom") {
+    var cls2 = findClass(state.activeClassName);
+    var wKey = weekKey(state.date);
+    var fri = (state.fridayInfo[wKey] || {})[cls2.className] || {};
+    showInlineEdit(fri.middleRoom || "", "예: 305", function (val) {
+      updateFriday(cls2.className, { middleRoom: val.trim() });
+      render();
+    });
+  } else if (action === "toggleFilter") {
+    var newStatus = el.getAttribute('data-status') || null;
+    state.filterStatus = (state.filterStatus === newStatus) ? null : newStatus;
+    var listArea = document.getElementById('classListArea');
+    if (listArea) {
+      listArea.innerHTML = state.filterStatus ? renderFilterView() : renderClassListArea();
+      attachClassListEvents();
+    }
+    var summaryEl = document.getElementById('daySummary');
+    if (summaryEl) summaryEl.innerHTML = renderDaySummary(computeDayCounts());
+    attachSummaryEvents();
+  } else if (action === "toggleElemDays") {
+    var cur = (state.meta[state.activeClassName] || {}).elemDays;
+    var next = cur === '월수' ? '화목' : cur === '화목' ? null : '월수';
+    updateMeta(state.activeClassName, { elemDays: next });
+    render();
+  } else if (action === "toggleNativeMenu") {
+    var menu = document.getElementById('nativeMenu');
+    if (menu) menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'flex' : 'none';
+  } else if (action === "setNativeDay") {
+    var day = el.getAttribute('data-day');
+    updateMeta(state.activeClassName, { nativeDay: day });
+    render();
+  } else if (action === "clearNativeDay") {
+    updateMeta(state.activeClassName, { nativeDay: "" });
+    render();
+  } else if (action === "toggleRosterMenu") {
+    var sname = el.getAttribute('data-student');
+    state.rosterMenuFor = (state.rosterMenuFor === sname) ? null : sname;
+    render();
+  } else if (action === "setRoster") {
+    var rsVal = el.getAttribute('data-rs');
+    var rsStudent = el.getAttribute('data-student');
+    if (rsVal === 'quit') {
+      if (!confirm('"' + rsStudent + '" 학생을 퇴원 처리합니다. 명단에서 삭제하시겠어요?')) return;
+      if (state.extraStudents[state.activeClassName]) {
+        state.extraStudents[state.activeClassName] = state.extraStudents[state.activeClassName].filter(function(st) { return st.name !== rsStudent; });
+        syncToFirebase('extraStudents');
+      }
+      var isOriginal = RAW_CLASSES.some(function(c) {
+        return c.className === state.activeClassName && c.students.some(function(st) { return st.name === rsStudent; });
+      });
+      if (isOriginal) {
+        setRosterStatus(state.activeClassName, rsStudent, 'quit');
+      }
+    } else {
+      setRosterStatus(state.activeClassName, rsStudent, rsVal);
+    }
+    state.rosterMenuFor = null;
+    render();
+  } else if (action === "startEditStudent") {
+    state.editingStudent = el.getAttribute('data-student');
+    state.rosterMenuFor = null;
+    render();
+  } else if (action === "cancelEditStudent") {
+    state.editingStudent = null;
+    render();
+  } else if (action === "confirmEditStudent") {
+    var oldName = el.getAttribute('data-student');
+    var nameEl = document.getElementById('editName_' + oldName);
+    var schoolEl = document.getElementById('editSchool_' + oldName);
+    var gradeEl = document.getElementById('editGrade_' + oldName);
+    var noteEl = document.getElementById('editNote_' + oldName);
+    var newName = nameEl ? nameEl.value.trim() : oldName;
+    if (!newName) { alert('이름을 입력해주세요.'); return; }
+    var patch = {
+      name: newName,
+      school: schoolEl ? schoolEl.value.trim() : '',
+      grade: gradeEl ? (parseInt(gradeEl.value) || '') : '',
+      note: noteEl ? noteEl.value.trim() : ''
+    };
+    updateStudentInfo(state.activeClassName, oldName, patch);
+    state.editingStudent = null;
+    render();
+  } else if (action === "startAddStudent") {
+    state.addingStudent = true;
+    render();
+    document.getElementById('newStudentName') && document.getElementById('newStudentName').focus();
+  } else if (action === "cancelAddStudent") {
+    state.addingStudent = false;
+    render();
+  } else if (action === "confirmAddStudent") {
+    var nameEl = document.getElementById('newStudentName');
+    var schoolEl = document.getElementById('newStudentSchool');
+    var gradeEl = document.getElementById('newStudentGrade');
+    var newName = nameEl ? nameEl.value.trim() : '';
+    if (!newName) { alert('이름을 입력해주세요.'); return; }
+    addStudent(state.activeClassName, newName, schoolEl ? schoolEl.value : '', gradeEl ? parseInt(gradeEl.value) || '' : '');
+    state.addingStudent = false;
+    render();
+  } else if (action === "toggleFridayOrder") {
+    var wKey2 = weekKey(state.date);
+    var fri2 = (state.fridayInfo[wKey2] || {})[state.activeClassName] || {};
+    var next = fri2.order === "room-first" ? "lab-first" : "room-first";
+    updateFriday(state.activeClassName, { order: next });
+    render();
+  } else if (action === "cycleStatus") {
+    if (e.target.closest('[data-action="clearStatus"]')) return;
+    var student = el.getAttribute('data-student');
+    var dKey = todayKey(state.date);
+    var rec = ((state.attendance[dKey] || {})[state.activeClassName] || {})[student];
+    var idx = rec ? STATUS_ORDER.indexOf(rec.status) : -1;
+    var nextStatus = STATUS_ORDER[(idx + 1) % STATUS_ORDER.length];
+    setStudentStatus(state.activeClassName, student, nextStatus);
+    if (nextStatus === "absent" || nextStatus === "late") {
+      state.memoOpenFor = student;
+    } else {
+      state.memoOpenFor = null;
+    }
+    render();
+  } else if (action === "clearStatus") {
+    e.stopPropagation();
+    var student2 = el.getAttribute('data-student');
+    clearStudentStatus(state.activeClassName, student2);
+    render();
+  } else if (action === "openMemo") {
+    state.memoOpenFor = el.getAttribute('data-student');
+    render();
+  } else if (action === "saveMemo") {
+    var student3 = el.getAttribute('data-student');
+    var input = document.getElementById('memoInput');
+    var dKey3 = todayKey(state.date);
+    var rec3 = ((state.attendance[dKey3] || {})[state.activeClassName] || {})[student3] || {};
+    setStudentStatus(state.activeClassName, student3, rec3.status, input ? input.value.trim() : "");
+    state.memoOpenFor = null;
+    render();
+  } else if (action === "setFridayOrder") {
+    updateFriday(el.getAttribute('data-class'), { order: el.getAttribute('data-order') });
+    render();
+  }
+}
+
+function showInlineEdit(currentValue, placeholder, onSave) {
+  var area = document.getElementById('inlineEditArea');
+  if (!area) return;
+  area.innerHTML =
+    '<div style="display:flex;gap:6px;margin-top:8px;">' +
+      '<input id="inlineEditInput" value="' + escapeHtml(currentValue) + '" placeholder="' + escapeHtml(placeholder) + '" ' +
+      'style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid #e7e5e4;font-size:13px;" />' +
+      '<button id="inlineEditSave" style="padding:0 12px;border-radius:8px;background:#1c1917;color:#fff;font-size:12.5px;font-weight:700;">저장</button>' +
+      '<button id="inlineEditCancel" style="padding:0 10px;border-radius:8px;border:1px solid #e7e5e4;background:#fff;font-size:12.5px;color:#78716c;">취소</button>' +
+    '</div>';
+  var input = document.getElementById('inlineEditInput');
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+  document.getElementById('inlineEditSave').addEventListener('click', function () { onSave(input.value); });
+  document.getElementById('inlineEditCancel').addEventListener('click', function () { area.innerHTML = ""; });
+  input.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Enter') onSave(input.value);
+    if (ev.key === 'Escape') { area.innerHTML = ""; }
+  });
+}
+
+render();
+</script>
+</body>
+</html>
