@@ -344,7 +344,6 @@ function render() {
   else if (state.view === "class") root.innerHTML = renderClassView();
   else if (state.view === "friday") root.innerHTML = renderFridayView();
   attachEvents();
-  // 리스트뷰에서 openClass/toggleGroup/toggleFilter 이벤트 연결
   if (state.view === "list") refreshClassList();
   // 클래스뷰에서 리스트뷰로 돌아올 때 스크롤 복원
   if (state.view === "list" && state._restoreScroll) {
@@ -762,18 +761,34 @@ function renderFridayView() {
   return html + '</div></div></div>';
 }
 
+// 이벤트 위임: root에 한 번만 등록, 중복 등록 없음
+var _eventsAttached = false;
 function attachEvents() {
-  root.querySelectorAll("[data-action]").forEach(function(el) {
-    var action = el.getAttribute("data-action");
-    if (action === "middleFriRoomInput") {
-      el.addEventListener("blur", function() { updateFriday(el.getAttribute("data-class"), { middleRoom: el.value.trim() }); });
-      el.addEventListener("keydown", function(e) { if (e.key === "Enter") { updateFriday(el.getAttribute("data-class"), { middleRoom: el.value.trim() }); el.blur(); } });
-      return;
-    }
-    // openClass, toggleGroup, toggleFilter는 refreshClassList에서 별도 처리
-    if (action === "memoInput" || action === "openClass" || action === "toggleGroup" || action === "toggleFilter") return;
-    el.addEventListener("click", function(e) { handleAction(action, el, e); });
-  });
+  if (!_eventsAttached) {
+    _eventsAttached = true;
+
+    root.addEventListener("click", function(e) {
+      var el = e.target.closest("[data-action]");
+      if (!el) return;
+      var action = el.getAttribute("data-action");
+      if (action === "middleFriRoomInput" || action === "memoInput") return;
+      handleAction(action, el, e);
+    });
+
+    root.addEventListener("blur", function(e) {
+      var el = e.target.closest("[data-action='middleFriRoomInput']");
+      if (!el) return;
+      updateFriday(el.getAttribute("data-class"), { middleRoom: el.value.trim() });
+    }, true);
+
+    root.addEventListener("keydown", function(e) {
+      var el = e.target.closest("[data-action='middleFriRoomInput']");
+      if (el && e.key === "Enter") {
+        updateFriday(el.getAttribute("data-class"), { middleRoom: el.value.trim() });
+        el.blur();
+      }
+    });
+  }
 
   var searchInput = document.getElementById("searchInput");
   if (searchInput) {
@@ -782,49 +797,47 @@ function attachEvents() {
     searchInput.addEventListener("input", function() { if (!searchInput._composing) { state.search = searchInput.value; refreshClassList(); } });
   }
 
+  // memoInput: 매번 새로 render되므로 getElementById로 직접 처리
   var memoInput = document.getElementById("memoInput");
   if (memoInput) {
     memoInput.focus();
     memoInput.setSelectionRange(memoInput.value.length, memoInput.value.length);
-    memoInput.addEventListener("keydown", function(e) {
-      if (e.key === "Enter") {
-        var student = memoInput.getAttribute("data-student");
-        var rec = (state.attendance[todayKey(state.date)] || {})[state.activeClassName] || {};
-        setStudentStatus(state.activeClassName, student, (rec[student] || {}).status, memoInput.value.trim());
-        state.memoOpenFor = null; render();
-      }
-    });
   }
 }
+
+// memoInput keydown은 위임으로 처리
+root.addEventListener("keydown", function(e) {
+  if (e.target && e.target.id === "memoInput" && e.key === "Enter") {
+    var student = e.target.getAttribute("data-student");
+    var rec = (state.attendance[todayKey(state.date)] || {})[state.activeClassName] || {};
+    setStudentStatus(state.activeClassName, student, (rec[student] || {}).status, e.target.value.trim());
+    state.memoOpenFor = null; render();
+  }
+});
 
 function refreshClassList() {
   var listArea = document.getElementById("classListArea");
   if (!listArea) return;
   listArea.innerHTML = state.filterStatus ? renderFilterView() : renderClassListArea();
-  // 그룹 헤더 이벤트 재연결
-  listArea.querySelectorAll("[data-action='openClass']").forEach(function(el) {
-    el.addEventListener("click", function() {
-      state.listScrollY = window.scrollY;
-      state.activeClassName = el.getAttribute("data-class");
-      state.memoOpenFor = null; state.view = "class"; render();
-    });
-  });
-  listArea.querySelectorAll("[data-action='toggleGroup']").forEach(function(el) {
-    el.addEventListener("click", function() {
-      var gk = el.getAttribute("data-group");
-      state.collapsedGroups[gk] = !state.collapsedGroups[gk];
-      refreshClassList();
-    });
-  });
-  var summaryEl = document.getElementById("daySummary");
-  if (summaryEl) {
-    summaryEl.querySelectorAll("[data-action='toggleFilter']").forEach(function(btn) {
-      btn.addEventListener("click", function() { handleAction("toggleFilter", btn, {}); });
-    });
-  }
 }
 
 function handleAction(action, el, e) {
+  if (action === "openClass") {
+    state.listScrollY = window.scrollY;
+    state.activeClassName = el.getAttribute("data-class");
+    state.memoOpenFor = null; state.view = "class"; render(); return;
+  } else if (action === "toggleGroup") {
+    var gk = el.getAttribute("data-group");
+    state.collapsedGroups[gk] = !state.collapsedGroups[gk];
+    refreshClassList(); return;
+  } else if (action === "toggleFilter") {
+    var newStatus = el.getAttribute("data-status") || null;
+    state.filterStatus = (state.filterStatus === newStatus) ? null : newStatus;
+    refreshClassList();
+    var summaryEl = document.getElementById("daySummary");
+    if (summaryEl) summaryEl.innerHTML = renderDaySummary(computeDayCounts());
+    return;
+  }
   if (action === "shiftDate") {
     var d = new Date(state.date); d.setDate(d.getDate() + parseInt(el.getAttribute("data-delta"), 10));
     state.date = d; state.filterStatus = null; render();
@@ -848,14 +861,6 @@ function handleAction(action, el, e) {
   } else if (action === "editFriRoom") {
     var cls2 = findClass(state.activeClassName);
     showInlineEdit(((state.fridayInfo[weekKey(state.date)] || {})[cls2.className] || {}).middleRoom || "", "예: 305", function(val) { updateFriday(cls2.className, { middleRoom: val.trim() }); render(); });
-  } else if (action === "toggleFilter") {
-    var newStatus = el.getAttribute("data-status") || null;
-    state.filterStatus = (state.filterStatus === newStatus) ? null : newStatus;
-    var listArea = document.getElementById("classListArea");
-    if (listArea) { listArea.innerHTML = state.filterStatus ? renderFilterView() : renderClassListArea(); }
-    refreshClassList();
-    var summaryEl = document.getElementById("daySummary");
-    if (summaryEl) { summaryEl.innerHTML = renderDaySummary(computeDayCounts()); }
   } else if (action === "toggleElemDays") {
     var cur = (state.meta[state.activeClassName] || {}).elemDays;
     updateMeta(state.activeClassName, { elemDays: cur === "월수" ? "화목" : cur === "화목" ? null : "월수" }); render();
