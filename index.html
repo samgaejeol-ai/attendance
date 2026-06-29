@@ -333,6 +333,8 @@ function render() {
   else if (state.view === "class") root.innerHTML = renderClassView();
   else if (state.view === "friday") root.innerHTML = renderFridayView();
   attachEvents();
+  // 리스트뷰에서 openClass/toggleGroup/toggleFilter 이벤트 연결
+  if (state.view === "list") refreshClassList();
   // 클래스뷰에서 리스트뷰로 돌아올 때 스크롤 복원
   if (state.view === "list" && state._restoreScroll) {
     window.scrollTo(0, state.listScrollY);
@@ -757,7 +759,8 @@ function attachEvents() {
       el.addEventListener("keydown", function(e) { if (e.key === "Enter") { updateFriday(el.getAttribute("data-class"), { middleRoom: el.value.trim() }); el.blur(); } });
       return;
     }
-    if (action === "memoInput" || action === "openClass") return;
+    // openClass, toggleGroup, toggleFilter는 refreshClassList에서 별도 처리
+    if (action === "memoInput" || action === "openClass" || action === "toggleGroup" || action === "toggleFilter") return;
     el.addEventListener("click", function(e) { handleAction(action, el, e); });
   });
 
