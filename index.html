@@ -137,7 +137,30 @@ function initCollapsedGroups() {
 }
 
 const stateRef = ref(db, "state");
+
+// localStorage 캐시로 즉시 첫 화면 표시
+var _CACHE_KEY = "attendance_cache_v1";
+try {
+  var cached = localStorage.getItem(_CACHE_KEY);
+  if (cached) {
+    var cdata = JSON.parse(cached);
+    state.meta = cdata.meta || {};
+    state.fridayInfo = cdata.fridayInfo || {};
+    state.attendance = cdata.attendance || {};
+    state.roster = cdata.roster || {};
+    state.studentOverride = cdata.studentOverride || {};
+    state.extraStudents = cdata.extraStudents || {};
+    initCollapsedGroups();
+    state.loaded = true;
+    render();
+  }
+} catch(e) {}
+
+// 내가 직접 쓴 직후엔 onValue 무시 (불필요한 재렌더 방지)
+var _isSelfWriting = false;
+
 onValue(stateRef, (snapshot) => {
+  if (_isSelfWriting) return; // 내 쓰기에 의한 이벤트 무시
   const data = snapshot.val();
   if (data) {
     state.meta = data.meta || {};
@@ -146,16 +169,26 @@ onValue(stateRef, (snapshot) => {
     state.roster = data.roster || {};
     state.studentOverride = data.studentOverride || {};
     state.extraStudents = data.extraStudents || {};
+    try { localStorage.setItem(_CACHE_KEY, JSON.stringify(data)); } catch(e) {}
   }
   if (state.collapsedGroups === null) initCollapsedGroups();
   state.loaded = true;
   render();
 });
 
+// debounce: 1.5초 동안 추가 변경 없으면 Firebase에 한 번에 저장
+var _debounceTimers = {};
 function syncToFirebase(key) {
-  const updates = {};
-  updates["state/" + key] = state[key];
-  update(ref(db), updates);
+  if (_debounceTimers[key]) clearTimeout(_debounceTimers[key]);
+  _debounceTimers[key] = setTimeout(function() {
+    _isSelfWriting = true;
+    const updates = {};
+    updates["state/" + key] = state[key];
+    update(ref(db), updates).then(function() {
+      setTimeout(function() { _isSelfWriting = false; }, 500);
+    }).catch(function() { _isSelfWriting = false; });
+    delete _debounceTimers[key];
+  }, 1500);
 }
 
 function findClass(name) {
