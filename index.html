@@ -264,7 +264,11 @@ function setRosterStatus(className, studentName, rStatus) {
 }
 
 function addStudent(className, name, school, grade, note) {
+  console.log("[addStudent 호출]", className, name, new Error().stack);
   if (!state.extraStudents[className]) state.extraStudents[className] = [];
+  // 같은 이름이 이미 있으면 중복 추가 방지
+  var already = state.extraStudents[className].some(function(s) { return s.name === name.trim(); });
+  if (already) { console.log("[중복 방지] 이미 존재:", name); return; }
   state.extraStudents[className].push({ name: name.trim(), school: school.trim(), grade: grade, note: note || "" });
   syncToFirebaseNow("extraStudents"); // 즉시 저장 (debounce 없음)
 }
@@ -904,8 +908,10 @@ function handleAction(action, el, e) {
     document.getElementById("newStudentName") && document.getElementById("newStudentName").focus();
   } else if (action === "cancelAddStudent") { state.addingStudent = false; render();
   } else if (action === "confirmAddStudent") {
+    if (el.disabled) return; // 처리 중 재클릭 방지
+    el.disabled = true;
     var newName = document.getElementById("newStudentName") ? document.getElementById("newStudentName").value.trim() : "";
-    if (!newName) { alert("이름을 입력해주세요."); return; }
+    if (!newName) { alert("이름을 입력해주세요."); el.disabled = false; return; }
     // 같은 이름으로 퇴원 처리된 경우 roster에서 제거 후 재등록
     if (state.roster[state.activeClassName] && state.roster[state.activeClassName][newName] === "quit") {
       delete state.roster[state.activeClassName][newName];
