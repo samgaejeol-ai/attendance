@@ -664,7 +664,10 @@ function renderClassView() {
       if (menuOpen) {
         html += '<div style="position:absolute;right:0;top:28px;z-index:30;background:#fff;border:1px solid #e7e5e4;border-radius:10px;padding:5px;box-shadow:0 4px 16px rgba(0,0,0,0.1);min-width:110px;">' +
           '<button data-action="startEditStudent" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#2563eb;background:none;">✎ 정보 수정</button>' +
-          '<button data-action="singleTransfer" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#7c3aed;background:none;">⇄ 반 이동</button>';
+          '<button data-action="singleTransfer" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#7c3aed;background:none;">⇄ 반 이동</button>' +
+          (isNewStudent(s) ?
+            '<button data-action="clearNewBadge" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#c026d3;background:none;">🆕 표시 끄기</button>' :
+            '<button data-action="markAsNew" data-student="' + escapeHtml(s.name) + '" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#c026d3;background:none;">🆕 신규로 표시</button>');
         if (rs === "active") {
           html += '<button data-action="setRoster" data-student="' + escapeHtml(s.name) + '" data-rs="leave" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#a16207;background:none;">휴원 처리</button>' +
             '<button data-action="setRoster" data-student="' + escapeHtml(s.name) + '" data-rs="quit" style="display:block;width:100%;text-align:left;padding:7px 10px;border-radius:7px;font-size:12.5px;font-weight:700;color:#dc2626;background:none;">퇴원 처리</button>';
@@ -993,6 +996,16 @@ function handleAction(action, el, e) {
     if (!confirm('"' + sname3 + '"을 [' + target2 + ']으로 이동합니다.')) return;
     transferStudents(state.activeClassName, [sname3], target2);
     state.singleTransferOpen = null; render();
+  } else if (action === "markAsNew") {
+    var sname4 = el.getAttribute("data-student");
+    updateStudentInfo(state.activeClassName, sname4, { joinedAt: todayKey(new Date()) });
+    syncToFirebaseNow("extraStudents"); syncToFirebaseNow("studentOverride");
+    state.rosterMenuFor = null; render();
+  } else if (action === "clearNewBadge") {
+    var sname5 = el.getAttribute("data-student");
+    updateStudentInfo(state.activeClassName, sname5, { joinedAt: null });
+    syncToFirebaseNow("extraStudents"); syncToFirebaseNow("studentOverride");
+    state.rosterMenuFor = null; render();
   }
 }
 
