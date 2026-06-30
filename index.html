@@ -263,14 +263,25 @@ function setRosterStatus(className, studentName, rStatus) {
   syncToFirebaseNow("roster"); // 즉시 저장
 }
 
-function addStudent(className, name, school, grade, note) {
-  console.log("[addStudent 호출]", className, name, new Error().stack);
+function addStudent(className, name, school, grade, note, joinedAt) {
   if (!state.extraStudents[className]) state.extraStudents[className] = [];
   // 같은 이름이 이미 있으면 중복 추가 방지
   var already = state.extraStudents[className].some(function(s) { return s.name === name.trim(); });
-  if (already) { console.log("[중복 방지] 이미 존재:", name); return; }
-  state.extraStudents[className].push({ name: name.trim(), school: school.trim(), grade: grade, note: note || "" });
+  if (already) { return; }
+  state.extraStudents[className].push({
+    name: name.trim(), school: school.trim(), grade: grade, note: note || "",
+    joinedAt: joinedAt || todayKey(new Date()) // 신규 등록일 (NEW 뱃지 기준)
+  });
   syncToFirebaseNow("extraStudents"); // 즉시 저장 (debounce 없음)
+}
+
+// NEW 뱃지 표시 여부 (등록일로부터 30일 이내)
+var NEW_BADGE_DAYS = 30;
+function isNewStudent(student) {
+  if (!student.joinedAt) return false;
+  var joined = new Date(student.joinedAt + "T00:00:00");
+  var diffDays = Math.floor((new Date() - joined) / 86400000);
+  return diffDays >= 0 && diffDays < NEW_BADGE_DAYS;
 }
 
 function setStudentStatus(className, studentName, status, memo) {
@@ -469,13 +480,15 @@ function renderClassRow(c) {
     var edBg = m.elemDays === "월수" ? "#e0f2fe" : "#f3e8ff";
     elemDaysBadge = '<span style="font-size:10.5px;font-weight:700;color:' + edColor + ';background:' + edBg + ';padding:2px 6px;border-radius:5px;">📅 ' + m.elemDays + '</span>';
   }
+  var newCount = activeStudents(c.className).filter(isNewStudent).length;
+  var newClassBadge = newCount > 0 ? '<span style="font-size:10.5px;font-weight:700;color:#c026d3;background:#fdf4ff;padding:2px 6px;border-radius:5px;">🆕 ' + newCount + '명</span>' : "";
   return '<button class="classRowBtn" data-action="openClass" data-class="' + escapeHtml(c.className) + '" style="display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:11px;border:1px solid #e7e5e4;background:#fff;text-align:left;width:100%;">' +
     '<div style="width:4px;height:30px;border-radius:2px;background:' + badge.color + ';flex-shrink:0;"></div>' +
     '<div style="flex:1;min-width:0;">' +
       '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
         '<span style="font-weight:700;font-size:14.5px;">' + escapeHtml(c.className) + '</span>' +
         '<span style="font-size:10.5px;font-weight:700;color:' + badge.color + ';background:' + badge.bg + ';padding:2px 6px;border-radius:5px;">' + escapeHtml(badge.label) + '</span>' +
-        nativeBadge + elemDaysBadge + friBadge +
+        nativeBadge + elemDaysBadge + friBadge + newClassBadge +
       '</div>' +
       '<div style="font-size:12px;color:#a8a29e;margin-top:2px;">학생 ' + activeStudents(c.className).length + '명' + (m.room ? (" · " + escapeHtml(m.room) + "호") : " · 교실 미입력") + '</div>' +
     '</div>' +
@@ -617,6 +630,7 @@ function renderClassView() {
     var st = status ? STATUS[status] : null;
     var rsBadge = rs === "leave" ? '<span style="font-size:10px;font-weight:700;background:#fef9c3;color:#a16207;padding:2px 6px;border-radius:5px;margin-left:5px;">휴원</span>' :
       rs === "quit" ? '<span style="font-size:10px;font-weight:700;background:#fee2e2;color:#991b1b;padding:2px 6px;border-radius:5px;margin-left:5px;">퇴원</span>' : "";
+    var newBadge = (!isInactive && isNewStudent(s)) ? '<span style="font-size:10px;font-weight:700;background:#fdf4ff;color:#c026d3;padding:2px 6px;border-radius:5px;margin-left:5px;">🆕 신규</span>' : "";
     var menuOpen = state.rosterMenuFor === s.name;
     var isSelected = state.transferMode && state.transferSelected[s.name];
 
@@ -635,7 +649,7 @@ function renderClassView() {
     }
 
     html += '<div style="flex:1;min-width:0;">' +
-      '<div style="font-weight:700;font-size:14.5px;">' + escapeHtml(s.name) + rsBadge + '</div>' +
+      '<div style="font-weight:700;font-size:14.5px;">' + escapeHtml(s.name) + newBadge + rsBadge + '</div>' +
       '<div style="font-size:11.5px;color:#a8a29e;margin-top:1px;">' + (s.school ? (escapeHtml(s.school) + " ") : "") + (s.grade ? (s.grade + "학년") : "") + (s.note ? (" · " + escapeHtml(String(s.note).split("\n")[0])) : "") + '</div>' +
     '</div>';
 
