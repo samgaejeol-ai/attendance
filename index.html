@@ -20,7 +20,7 @@
   .chip.active-blue { border-color: #2563eb; background: #2563eb12; color: #2563eb; }
   .chip.active-cyan { border-color: #0891b2; background: #0891b212; color: #0891b2; }
   .chip.active-blue2 { border-color: #0369a1; background: #e0f2fe; color: #0369a1; }
-  .chip.active-purple { border-color: #7e22ce; background: #f3e8ff; color: #7e22ce; }
+  .chip.active-purple { border-color: #15803d; background: #dcfce7; color: #15803d; }
   .group-header { display:flex; align-items:center; justify-content:space-between; padding:8px 4px; cursor:pointer; user-select:none; }
   .group-header-label { font-size:12px; font-weight:700; color:#a8a29e; }
   .group-toggle { font-size:13px; color:#a8a29e; transition: transform 0.2s; }
@@ -65,9 +65,9 @@ var DOW_LABEL = ["일", "월", "화", "수", "목", "금", "토"];
 var DAYS_BADGE = {
   "월화수목금": { label: "매일", color: "#0891b2", bg: "#ecfeff" },
   "월수금": { label: "월수금", color: "#7c3aed", bg: "#f5f3ff" },
-  "화목금": { label: "화목금", color: "#c026d3", bg: "#fdf4ff" },
+  "화목금": { label: "화목금", color: "#15803d", bg: "#dcfce7" },
   "월수": { label: "월수", color: "#0369a1", bg: "#e0f2fe" },
-  "화목": { label: "화목", color: "#7e22ce", bg: "#f3e8ff" }
+  "화목": { label: "화목", color: "#15803d", bg: "#dcfce7" }
 };
 
 // 타임 그룹 정의
@@ -307,10 +307,15 @@ function updateMeta(className, patch) {
 }
 
 function updateFriday(className, patch) {
-  var wKey = weekKey(state.date);
-  if (!state.fridayInfo[wKey]) state.fridayInfo[wKey] = {};
-  state.fridayInfo[wKey][className] = Object.assign({}, state.fridayInfo[wKey][className] || {}, patch);
-  syncToFirebase("fridayInfo");
+  // 로테이션 order는 meta에 영구 저장, middleRoom(중등 금요일 교실)만 주별 저장
+  if (patch.order !== undefined) {
+    updateMeta(className, { fridayOrder: patch.order });
+  } else {
+    var wKey = weekKey(state.date);
+    if (!state.fridayInfo[wKey]) state.fridayInfo[wKey] = {};
+    state.fridayInfo[wKey][className] = Object.assign({}, state.fridayInfo[wKey][className] || {}, patch);
+    syncToFirebase("fridayInfo");
+  }
 }
 
 // ===== 반 이동 기능 =====
@@ -469,6 +474,8 @@ function renderClassRow(c) {
   var dow = state.date.getDay();
   var wKey = weekKey(state.date);
   var friInfo = ((state.fridayInfo[wKey] || {})[c.className] || {});
+  var mFri = (state.meta[c.className] || {});
+  if (friInfo.order === undefined && mFri.fridayOrder) friInfo = Object.assign({}, friInfo, { order: mFri.fridayOrder });
   var friBadge = "";
   if (dow === 5 && !isMiddleSchool(c.className)) {
     if (friInfo.order === "room-first") friBadge = '<span style="font-size:10.5px;font-weight:700;color:#1d4ed8;background:#dbeafe;padding:2px 6px;border-radius:5px;">🔵 교실먼저</span>';
@@ -476,8 +483,8 @@ function renderClassRow(c) {
   }
   var elemDaysBadge = "";
   if (c.days === "월화수목금" && m.elemDays) {
-    var edColor = m.elemDays === "월수" ? "#0369a1" : "#7e22ce";
-    var edBg = m.elemDays === "월수" ? "#e0f2fe" : "#f3e8ff";
+    var edColor = m.elemDays === "월수" ? "#0369a1" : "#15803d";
+    var edBg = m.elemDays === "월수" ? "#e0f2fe" : "#dcfce7";
     elemDaysBadge = '<span style="font-size:10.5px;font-weight:700;color:' + edColor + ';background:' + edBg + ';padding:2px 6px;border-radius:5px;">📅 ' + m.elemDays + '</span>';
   }
   var newCount = activeStudents(c.className).filter(isNewStudent).length;
@@ -551,7 +558,8 @@ function renderClassView() {
   var middle = isMiddleSchool(cls.className);
   var elem = isElementary(cls.className);
   var dayData = (state.attendance[dKey] || {})[cls.className] || {};
-  var fri = (state.fridayInfo[wKey] || {})[cls.className] || {};
+  var fri = Object.assign({}, (state.fridayInfo[wKey] || {})[cls.className] || {});
+  if (fri.order === undefined && m.fridayOrder) fri.order = m.fridayOrder;
   var actives = activeStudents(cls.className);
   var allSts = allStudents(cls.className);
   var counts = {};
@@ -750,6 +758,13 @@ function renderClassView() {
 function renderFridayView() {
   var wKey = weekKey(state.date);
   var weekData = state.fridayInfo[wKey] || {};
+  // 반영구 로테이션: meta.fridayOrder를 weekData에 병합
+  RAW_CLASSES.forEach(function(c) {
+    var mo = (state.meta[c.className] || {}).fridayOrder;
+    if (mo && !(weekData[c.className] || {}).order) {
+      weekData[c.className] = Object.assign({}, weekData[c.className] || {}, { order: mo });
+    }
+  });
   var elemClasses = RAW_CLASSES.filter(function(c) { return !isMiddleSchool(c.className); });
   var middleClasses = RAW_CLASSES.filter(function(c) { return isMiddleSchool(c.className); });
   var monday = mondayOf(state.date);
@@ -939,8 +954,9 @@ function handleAction(action, el, e) {
       document.getElementById("newStudentGrade") ? parseInt(document.getElementById("newStudentGrade").value) || "" : "");
     state.addingStudent = false; render();
   } else if (action === "toggleFridayOrder") {
-    var fri2 = (state.fridayInfo[weekKey(state.date)] || {})[state.activeClassName] || {};
-    updateFriday(state.activeClassName, { order: fri2.order === "room-first" ? "lab-first" : "room-first" }); render();
+    var fri2 = Object.assign({}, (state.fridayInfo[weekKey(state.date)] || {})[state.activeClassName] || {});
+    var curOrder2 = fri2.order || (state.meta[state.activeClassName] || {}).fridayOrder;
+    updateFriday(state.activeClassName, { order: curOrder2 === "room-first" ? "lab-first" : "room-first" }); render();
   } else if (action === "cycleStatus") {
     if (e.target.closest("[data-action='clearStatus']")) return;
     var student = el.getAttribute("data-student");
