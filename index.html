@@ -184,16 +184,33 @@ onValue(stateRef, (snapshot) => {
   render();
 });
 
+// 저장 직전 undefined 값 제거 (Firebase는 undefined가 있으면 저장 전체를 거부함)
+function stripUndefined(obj) {
+  if (obj === undefined) return null;
+  if (obj === null || typeof obj !== "object") return obj;
+  if (Array.isArray(obj)) return obj.map(stripUndefined);
+  var out = {};
+  Object.keys(obj).forEach(function(k) {
+    var v = obj[k];
+    if (v === undefined) return; // undefined 키는 통째로 제외
+    out[k] = stripUndefined(v);
+  });
+  return out;
+}
+
 // 즉시 저장 (명단 추가/삭제 등 즉각 반영 필요한 경우)
 function syncToFirebaseNow(key) {
   if (_debounceTimers[key]) { clearTimeout(_debounceTimers[key]); delete _debounceTimers[key]; }
   _selfWritingKeys[key] = true;
   const updates = {};
-  updates["state/" + key] = state[key];
+  updates["state/" + key] = stripUndefined(state[key]);
   update(ref(db), updates).then(function() {
     // 저장 완료 후 2초간 더 보호 (Firebase onValue 지연 대응)
     setTimeout(function() { delete _selfWritingKeys[key]; }, 2000);
-  }).catch(function() { delete _selfWritingKeys[key]; });
+  }).catch(function(err) {
+    delete _selfWritingKeys[key];
+    alert("⚠ 저장 실패 (" + key + ")\n" + (err && err.message ? err.message : err) + "\n인터넷 연결을 확인하고 새로고침 후 다시 시도해주세요.");
+  });
 }
 
 // debounce: 1.5초 동안 추가 변경 없으면 Firebase에 한 번에 저장
@@ -202,10 +219,13 @@ function syncToFirebase(key) {
   _debounceTimers[key] = setTimeout(function() {
     _selfWritingKeys[key] = true;
     const updates = {};
-    updates["state/" + key] = state[key];
+    updates["state/" + key] = stripUndefined(state[key]);
     update(ref(db), updates).then(function() {
       setTimeout(function() { delete _selfWritingKeys[key]; }, 2000);
-    }).catch(function() { delete _selfWritingKeys[key]; });
+    }).catch(function(err) {
+      delete _selfWritingKeys[key];
+      alert("⚠ 저장 실패 (" + key + ")\n" + (err && err.message ? err.message : err) + "\n인터넷 연결을 확인하고 새로고침 후 다시 시도해주세요.");
+    });
     delete _debounceTimers[key];
   }, 1500);
 }
