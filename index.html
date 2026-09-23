@@ -131,6 +131,8 @@ var state = {
   calendarOpen: false, calendarViewMonth: null,
   // 빠른 상태/연락처 패널
   quickActionFor: null,
+  // 반명 수정
+  editingClassName: false,
 };
 
 // 그룹 접힘 상태 초기화 (자동 펼침)
@@ -259,6 +261,92 @@ function activeStudents(className) {
   return allStudents(className).filter(function(s) {
     return rosterStatus(className, s.name) === "active";
   });
+}
+
+function renameClass(oldClassName, newClassName) {
+  newClassName = newClassName.trim();
+  if (!newClassName || newClassName === oldClassName) return;
+  // 중복 확인
+  var existing = getClassList().find(function(c) { return c.className === newClassName; });
+  if (existing) { alert('"' + newClassName + '" 반이 이미 존재합니다.'); return; }
+
+  var cls = findClass(oldClassName);
+  if (!cls) return;
+  var classKey = cls._key;
+
+  // 1. classes에서 반명 변경
+  _selfWritingKeys["classes"] = true;
+  state.classes[classKey].className = newClassName;
+
+  // 2. 관련 데이터 키 마이그레이션 (로컬)
+  // attendance: 날짜별로 반명 키 변경
+  Object.keys(state.attendance).forEach(function(dKey) {
+    if (state.attendance[dKey][oldClassName] !== undefined) {
+      state.attendance[dKey][newClassName] = state.attendance[dKey][oldClassName];
+      delete state.attendance[dKey][oldClassName];
+    }
+  });
+  // roster
+  if (state.roster[oldClassName] !== undefined) {
+    state.roster[newClassName] = state.roster[oldClassName];
+    delete state.roster[oldClassName];
+  }
+  // meta
+  if (state.meta[oldClassName] !== undefined) {
+    state.meta[newClassName] = state.meta[oldClassName];
+    delete state.meta[oldClassName];
+  }
+  // fridayInfo
+  Object.keys(state.fridayInfo).forEach(function(wKey) {
+    if (state.fridayInfo[wKey][oldClassName] !== undefined) {
+      state.fridayInfo[wKey][newClassName] = state.fridayInfo[wKey][oldClassName];
+      delete state.fridayInfo[wKey][oldClassName];
+    }
+  });
+
+  // 3. Firebase에 일괄 업데이트
+  var updates = {};
+  updates["classes/" + classKey + "/className"] = newClassName;
+  // attendance 전체
+  Object.keys(state.attendance).forEach(function(dKey) {
+    if (state.attendance[dKey][newClassName] !== undefined) {
+      updates["state/attendance/" + dKey + "/" + newClassName] = state.attendance[dKey][newClassName];
+      updates["state/attendance/" + dKey + "/" + oldClassName] = null; // 삭제
+    }
+  });
+  // roster
+  if (state.roster[newClassName] !== undefined) {
+    updates["state/roster/" + newClassName] = state.roster[newClassName];
+    updates["state/roster/" + oldClassName] = null;
+  }
+  // meta
+  if (state.meta[newClassName] !== undefined) {
+    updates["state/meta/" + newClassName] = state.meta[newClassName];
+    updates["state/meta/" + oldClassName] = null;
+  }
+  // fridayInfo
+  Object.keys(state.fridayInfo).forEach(function(wKey) {
+    if (state.fridayInfo[wKey][newClassName] !== undefined) {
+      updates["state/fridayInfo/" + wKey + "/" + newClassName] = state.fridayInfo[wKey][newClassName];
+      updates["state/fridayInfo/" + wKey + "/" + oldClassName] = null;
+    }
+  });
+
+  update(ref(db), updates).then(function() {
+    setTimeout(function() { delete _selfWritingKeys["classes"]; }, 3000);
+    // 로컬 state 갱신
+    state.activeClassName = newClassName;
+    state.editingClassName = false;
+    render();
+  }).catch(function() {
+    delete _selfWritingKeys["classes"];
+    alert("⚠ 저장 실패. 다시 시도해주세요.");
+  });
+
+  // 즉시 화면 반영
+  state.activeClassName = newClassName;
+  state.editingClassName = false;
+  render();
 }
 
 function updateStudentInfo(className, oldName, patch) {
@@ -827,7 +915,17 @@ function renderClassView() {
     '<div style="display:flex;align-items:center;gap:10px;">' +
       '<button class="navbtn" data-action="backToList" style="width:32px;">‹</button>' +
       '<div style="flex:1;min-width:0;">' +
-        '<div style="font-weight:800;font-size:16.5px;letter-spacing:-0.2px;">' + escapeHtml(cls.className) + '</div>' +
+        (state.editingClassName ?
+          '<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">' +
+            '<input id="classNameInput" value="' + escapeHtml(cls.className) + '" style="font-size:15px;font-weight:800;padding:5px 9px;border-radius:8px;border:2px solid #2563eb;width:160px;outline:none;" />' +
+            '<button data-action="confirmClassName" style="padding:5px 11px;border-radius:8px;background:#2563eb;color:#fff;font-size:12.5px;font-weight:700;">저장</button>' +
+            '<button data-action="cancelClassName" style="padding:5px 9px;border-radius:8px;border:1px solid #e7e5e4;background:#fff;font-size:12.5px;color:#78716c;">취소</button>' +
+          '</div>' :
+          '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<div style="font-weight:800;font-size:16.5px;letter-spacing:-0.2px;">' + escapeHtml(cls.className) + '</div>' +
+            '<button data-action="startEditClassName" style="font-size:11px;color:#a8a29e;background:#f5f5f4;border:1px solid #e7e5e4;border-radius:6px;padding:2px 7px;">✎ 반명</button>' +
+          '</div>'
+        ) +
         '<div style="font-size:12px;color:#a8a29e;">' + (state.date.getMonth() + 1) + '월 ' + state.date.getDate() + '일 (' + DOW_LABEL[dow] + ') · 학생 ' + actives.length + '명</div>' +
       '</div>' +
       '<button data-action="toggleTransferMode" style="padding:6px 10px;border-radius:8px;border:1px solid ' + (state.transferMode ? "#2563eb" : "#e7e5e4") + ';background:' + (state.transferMode ? "#eff6ff" : "#fff") + ';font-size:12px;font-weight:700;color:' + (state.transferMode ? "#2563eb" : "#78716c") + ';">⇄ 반이동</button>' +
@@ -1127,6 +1225,15 @@ function attachEvents() {
 
 // memoInput keydown은 위임으로 처리
 root.addEventListener("keydown", function(e) {
+  if (e.target && e.target.id === "classNameInput" && e.key === "Enter") {
+    var newName = e.target.value.trim();
+    if (!newName || newName === state.activeClassName) { state.editingClassName = false; render(); return; }
+    if (!confirm('"' + state.activeClassName + '" → "' + newName + '"\n\n반 이름을 변경합니다.')) return;
+    renameClass(state.activeClassName, newName);
+  }
+  if (e.target && e.target.id === "classNameInput" && e.key === "Escape") {
+    state.editingClassName = false; render();
+  }
   if (e.target && e.target.id === "memoInput" && e.key === "Enter") {
     var student = e.target.getAttribute("data-student");
     var rec = (state.attendance[todayKey(state.date)] || {})[state.activeClassName] || {};
@@ -1206,9 +1313,25 @@ function handleAction(action, el, e) {
   } else if (action === "openClass") {
     state.listScrollY = window.scrollY;
     state.activeClassName = el.getAttribute("data-class"); state.memoOpenFor = null; state.view = "class"; render();
+  } else if (action === "startEditClassName") {
+    state.editingClassName = true; render();
+    setTimeout(function() {
+      var inp = document.getElementById("classNameInput");
+      if (inp) { inp.focus(); inp.select(); }
+    }, 50);
+  } else if (action === "cancelClassName") {
+    state.editingClassName = false; render();
+  } else if (action === "confirmClassName") {
+    var inp = document.getElementById("classNameInput");
+    var newName = inp ? inp.value.trim() : "";
+    if (!newName) { alert("반 이름을 입력해주세요."); return; }
+    if (newName === state.activeClassName) { state.editingClassName = false; render(); return; }
+    if (!confirm('"' + state.activeClassName + '" → "' + newName + '"\n\n반 이름을 변경합니다. 기존 출결 기록도 모두 함께 이전됩니다.')) return;
+    renameClass(state.activeClassName, newName);
   } else if (action === "backToList") {
     state.view = "list"; state._restoreScroll = true;
     state.transferMode = false; state.transferSelected = {}; state.singleTransferOpen = null;
+    state.editingClassName = false;
     render();
   } else if (action === "toggleGroup") {
     var gk = el.getAttribute("data-group");
