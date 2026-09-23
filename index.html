@@ -266,20 +266,19 @@ function activeStudents(className) {
 function renameClass(oldClassName, newClassName) {
   newClassName = newClassName.trim();
   if (!newClassName || newClassName === oldClassName) return;
-  // 중복 확인
-  var existing = getClassList().find(function(c) { return c.className === newClassName; });
-  if (existing) { alert('"' + newClassName + '" 반이 이미 존재합니다.'); return; }
 
-  var cls = findClass(oldClassName);
-  if (!cls) return;
-  var classKey = cls._key;
+  // 중복 확인 (RAW_CLASSES + extraStudents 모두 확인)
+  var allNames = RAW_CLASSES.map(function(c) { return c.className; });
+  if (allNames.indexOf(newClassName) !== -1) {
+    alert('"' + newClassName + '" 반이 이미 존재합니다.'); return;
+  }
 
-  // 1. classes에서 반명 변경
-  _selfWritingKeys["classes"] = true;
-  state.classes[classKey].className = newClassName;
+  // 1. 로컬 RAW_CLASSES에서 반명 변경
+  var cls = RAW_CLASSES.find(function(c) { return c.className === oldClassName; });
+  if (cls) cls.className = newClassName;
 
-  // 2. 관련 데이터 키 마이그레이션 (로컬)
-  // attendance: 날짜별로 반명 키 변경
+  // 2. 로컬 state 키 마이그레이션
+  // attendance
   Object.keys(state.attendance).forEach(function(dKey) {
     if (state.attendance[dKey][oldClassName] !== undefined) {
       state.attendance[dKey][newClassName] = state.attendance[dKey][oldClassName];
@@ -298,52 +297,77 @@ function renameClass(oldClassName, newClassName) {
   }
   // fridayInfo
   Object.keys(state.fridayInfo).forEach(function(wKey) {
-    if (state.fridayInfo[wKey][oldClassName] !== undefined) {
+    if (state.fridayInfo[wKey] && state.fridayInfo[wKey][oldClassName] !== undefined) {
       state.fridayInfo[wKey][newClassName] = state.fridayInfo[wKey][oldClassName];
       delete state.fridayInfo[wKey][oldClassName];
     }
   });
+  // extraStudents
+  if (state.extraStudents[oldClassName] !== undefined) {
+    state.extraStudents[newClassName] = state.extraStudents[oldClassName];
+    delete state.extraStudents[oldClassName];
+  }
+  // studentOverride
+  if (state.studentOverride[oldClassName] !== undefined) {
+    state.studentOverride[newClassName] = state.studentOverride[oldClassName];
+    delete state.studentOverride[oldClassName];
+  }
 
   // 3. Firebase에 일괄 업데이트
   var updates = {};
-  updates["classes/" + classKey + "/className"] = newClassName;
-  // attendance 전체
+  // attendance
   Object.keys(state.attendance).forEach(function(dKey) {
     if (state.attendance[dKey][newClassName] !== undefined) {
       updates["state/attendance/" + dKey + "/" + newClassName] = state.attendance[dKey][newClassName];
-      updates["state/attendance/" + dKey + "/" + oldClassName] = null; // 삭제
+      updates["state/attendance/" + dKey + "/" + oldClassName] = null;
     }
   });
   // roster
   if (state.roster[newClassName] !== undefined) {
     updates["state/roster/" + newClassName] = state.roster[newClassName];
     updates["state/roster/" + oldClassName] = null;
+  } else {
+    updates["state/roster/" + oldClassName] = null;
   }
   // meta
   if (state.meta[newClassName] !== undefined) {
     updates["state/meta/" + newClassName] = state.meta[newClassName];
     updates["state/meta/" + oldClassName] = null;
+  } else {
+    updates["state/meta/" + oldClassName] = null;
   }
   // fridayInfo
   Object.keys(state.fridayInfo).forEach(function(wKey) {
-    if (state.fridayInfo[wKey][newClassName] !== undefined) {
+    if (state.fridayInfo[wKey] && state.fridayInfo[wKey][newClassName] !== undefined) {
       updates["state/fridayInfo/" + wKey + "/" + newClassName] = state.fridayInfo[wKey][newClassName];
       updates["state/fridayInfo/" + wKey + "/" + oldClassName] = null;
     }
   });
+  // extraStudents
+  if (state.extraStudents[newClassName] !== undefined) {
+    updates["state/extraStudents/" + newClassName] = state.extraStudents[newClassName];
+    updates["state/extraStudents/" + oldClassName] = null;
+  } else {
+    updates["state/extraStudents/" + oldClassName] = null;
+  }
+  // studentOverride
+  if (state.studentOverride[newClassName] !== undefined) {
+    updates["state/studentOverride/" + newClassName] = state.studentOverride[newClassName];
+    updates["state/studentOverride/" + oldClassName] = null;
+  } else {
+    updates["state/studentOverride/" + oldClassName] = null;
+  }
+  // classNameOverride: 반명 변경 기록 (다음 업데이트 시 매핑 참고용)
+  updates["state/classNameOverride/" + oldClassName] = newClassName;
 
   update(ref(db), updates).then(function() {
-    setTimeout(function() { delete _selfWritingKeys["classes"]; }, 3000);
-    // 로컬 state 갱신
-    state.activeClassName = newClassName;
-    state.editingClassName = false;
-    render();
-  }).catch(function() {
-    delete _selfWritingKeys["classes"];
-    alert("⚠ 저장 실패. 다시 시도해주세요.");
+    console.log("반명 변경 완료:", oldClassName, "→", newClassName);
+  }).catch(function(err) {
+    console.error("반명 변경 실패:", err);
+    alert("⚠ Firebase 저장 실패. 다시 시도해주세요.");
   });
 
-  // 즉시 화면 반영
+  // 즉시 화면 반영 (Firebase 응답 기다리지 않음)
   state.activeClassName = newClassName;
   state.editingClassName = false;
   render();
